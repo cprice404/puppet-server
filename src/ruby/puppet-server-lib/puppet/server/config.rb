@@ -8,7 +8,7 @@ java_import java.io.FileReader
 class Puppet::Server::Config
 
   def self.initialize_settings(puppet_server_config)
-    @environment_mtime_registry = puppet_server_config["environment_mtime_registry"]
+    @environment_registry = puppet_server_config["environment_registry"]
   end
 
   def self.ssl_context
@@ -24,7 +24,7 @@ class Puppet::Server::Config
     @ssl_context
   end
 
-  def self.environment_mtime_registry
-    @environment_mtime_registry
+  def self.environment_registry
+    @environment_registry
   end
 end

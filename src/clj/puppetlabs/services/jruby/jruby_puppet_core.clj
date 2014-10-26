@@ -4,7 +4,8 @@
            (org.jruby RubyInstanceConfig$CompileMode CompatVersion)
            (org.jruby.embed ScriptingContainer LocalContextScope)
            (clojure.lang Atom)
-           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet EnvironmentMtimeRegistry))
+           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet EnvironmentMtimeRegistry EnvironmentRegistry)
+           (org.joda.time DateTime))
   (:require [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [schema.core :as schema]
@@ -76,7 +77,7 @@
    (schema/optional-key :max-active-instances)      schema/Int
    (schema/optional-key :http-client-ssl-protocols) [schema/Str]
    (schema/optional-key :http-client-cipher-suites) [schema/Str]
-   ;:environment-mtime-registry EnvironmentMtimeRegistry
+   :environment-registry                            EnvironmentRegistry
    })
 
 (def PoolState
@@ -146,7 +147,8 @@
   [config   :- JRubyPuppetConfig
    profiler :- (schema/maybe PuppetProfiler)]
   (let [{:keys [ruby-load-path gem-home master-conf-dir master-var-dir
-                http-client-ssl-protocols http-client-cipher-suites]} config]
+                http-client-ssl-protocols http-client-cipher-suites
+                environment-registry]} config]
     (when-not ruby-load-path
       (throw (Exception.
                "JRuby service missing config value 'ruby-load-path'")))
@@ -163,6 +165,7 @@
         (.put puppet-server-config "ssl_protocols" (into-array String http-client-ssl-protocols)))
       (when http-client-cipher-suites
         (.put puppet-server-config "cipher_suites" (into-array String http-client-cipher-suites)))
+      (.put puppet-server-config "environment_registry" environment-registry)
 
       {:jruby-puppet (.callMethod scripting-container
                                   ruby-puppet-class
@@ -229,6 +232,16 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
+
+(defn environment-registry
+  []
+  (reify
+    EnvironmentRegistry
+    (registerEnvironment [this env-name module-path]
+      (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path))
+    (getEnvironmentModifiedTime [this env-name]
+      (println "GETTING ENVIRONMENT MTIME FOR:" env-name)
+      (DateTime. 0))))
 
 (schema/defn ^:always-validate
   create-pool-context :- PoolContext

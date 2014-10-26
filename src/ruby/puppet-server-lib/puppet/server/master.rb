@@ -70,7 +70,7 @@ class Puppet::Server::Master
     # TODO: push this into Puppet::Server::Config
     Puppet::Server::HttpClient.initialize_settings(puppet_server_config)
     Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
-    Puppet::Environments::Cached.auto_flush_entry_class = Puppet::Server::Environments::Cached::AutoFlushEntry
+    Puppet::Environments::Cached.custom_cache_entry_class = Puppet::Server::Environments::Cached::AutoFlushEntry
 
     reset_environment_context()
 
