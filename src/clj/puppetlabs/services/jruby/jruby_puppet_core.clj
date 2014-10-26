@@ -4,8 +4,7 @@
            (org.jruby RubyInstanceConfig$CompileMode CompatVersion)
            (org.jruby.embed ScriptingContainer LocalContextScope)
            (clojure.lang Atom)
-           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet EnvironmentMtimeRegistry EnvironmentRegistry)
-           (org.joda.time DateTime))
+           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet EnvironmentRegistry))
   (:require [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [schema.core :as schema]
@@ -239,9 +238,9 @@
     EnvironmentRegistry
     (registerEnvironment [this env-name module-path]
       (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path))
-    (getEnvironmentModifiedTime [this env-name]
-      (println "GETTING ENVIRONMENT MTIME FOR:" env-name)
-      (DateTime. 0))))
+    (isExpired [this env-name]
+      (println "CHECKING EXPIRY FOR:" env-name)
+      false)))
 
 (schema/defn ^:always-validate
   create-pool-context :- PoolContext
