@@ -5,10 +5,13 @@ class Puppet::Server::Environments::Cached::AutoFlushEntry < Puppet::Environment
   def initialize(value)
     super value
     puts "CREATING AUTOFLUSH CACHE ENTRY FOR: #{value}"
+    @ctime = Time.now
   end
 
   def expired?
-    puts "AUTOFLUSH RETURNING EXPIRED?=true"
-    true
+    puts "AUTOFLUSH EXPIRED? ctime: #{@ctime} (#{@ctime.class})"
+    mtime = Puppet::Server::Config.environment_mtime_registry.get_env_mtime(value)
+    puts "AUTOFLUSH RETURNING EXPIRED? #{@ctime} <= #{mtime} ? #{@ctime <= mtime}"
+    @ctime <= mtime
   end
 end

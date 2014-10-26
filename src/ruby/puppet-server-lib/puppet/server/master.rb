@@ -50,6 +50,7 @@ class Puppet::Server::Master
     # TODO: find out if this is actually the best way to set the run mode
     Puppet.settings.preferred_run_mode = :master
 
+    Puppet::Server::Config.initialize_settings(puppet_server_config)
     Puppet::Server::Logger.init_logging
     Puppet::Server::Master::initialize_execution_stub
 
@@ -66,6 +67,7 @@ class Puppet::Server::Master
                :facts_terminus => 'yaml'})
     Puppet.settings.initialize_app_defaults(app_defaults)
 
+    # TODO: push this into Puppet::Server::Config
     Puppet::Server::HttpClient.initialize_settings(puppet_server_config)
     Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
     Puppet::Environments::Cached.auto_flush_entry_class = Puppet::Server::Environments::Cached::AutoFlushEntry

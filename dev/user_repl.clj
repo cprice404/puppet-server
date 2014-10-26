@@ -9,9 +9,25 @@
             [puppetlabs.services.ca.certificate-authority-service :refer [certificate-authority-service]]
             [puppetlabs.trapperkeeper.core :as tk]
             [puppetlabs.trapperkeeper.app :as tka]
-            [clojure.tools.namespace.repl :refer (refresh)]))
+            [clojure.tools.namespace.repl :refer (refresh)]
+            [clojure.java.io :as io]))
 
 (def system nil)
+
+(defn jvm-puppet-conf
+  []
+  (println "DEFINING JVM-PUPPET-CONF")
+  (if-let [conf (resolve 'user/jvm-puppet-conf)]
+    (deref conf)
+    {:global                {:logging-config "./dev/logback-dev.xml"}
+     :os-settings           {:ruby-load-path jruby-testutils/ruby-load-path}
+     :jruby-puppet          {:gem-home             jruby-testutils/gem-home
+                             :max-active-instances 1
+                             :master-conf-dir      jruby-testutils/conf-dir}
+     :webserver             {:client-auth "want"
+                             :ssl-host    "localhost"
+                             :ssl-port    8140}
+     :certificate-authority {:certificate-status {:client-whitelist []}}}))
 
 (defn init []
   (alter-var-root #'system
@@ -23,15 +39,7 @@
                request-handler-service
                puppet-server-config-service
                certificate-authority-service]
-              {:global       {:logging-config       "./dev/logback-dev.xml"}
-               :os-settings  {:ruby-load-path       jruby-testutils/ruby-load-path}
-               :jruby-puppet {:gem-home             jruby-testutils/gem-home
-                              :max-active-instances 1
-                              :master-conf-dir      jruby-testutils/conf-dir}
-               :webserver    {:client-auth "want"
-                              :ssl-host    "localhost"
-                              :ssl-port    8140}
-               :certificate-authority {:certificate-status {:client-whitelist []}}})))
+              (jvm-puppet-conf))))
   (alter-var-root #'system tka/init)
   (tka/check-for-errors! system))
 
@@ -57,3 +65,10 @@
 (defn reset []
   (stop)
   (refresh :after 'user-repl/go))
+
+#_(defn reload-user-ns-and-go
+  []
+  (println "RELOADING USER NS AND CALLING GO")
+  (if-let [user-resource (io/resource "user.clj")]
+    (load-file (.getFile user-resource)))
+  (go))
