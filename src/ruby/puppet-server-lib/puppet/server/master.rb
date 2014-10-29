@@ -14,7 +14,7 @@ require 'puppet/server/logger'
 require 'puppet/server/http_client'
 require 'puppet/server/jvm_profiler'
 require 'puppet/server/certificate'
-require 'puppet/server/environments/cached/auto_flush_entry'
+require 'puppet/server/environments/cached'
 
 require 'java'
 java_import com.puppetlabs.puppetserver.ExecutionStubImpl
@@ -70,7 +70,7 @@ class Puppet::Server::Master
     # TODO: push this into Puppet::Server::Config
     Puppet::Server::HttpClient.initialize_settings(puppet_server_config)
     Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
-    Puppet::Environments::Cached.custom_cache_entry_class = Puppet::Server::Environments::Cached::AutoFlushEntry
+    Puppet::Environments::Cached.cache_entry_factory_class = Puppet::Server::Environments::Cached::FlushableTTLEntryFactory
 
     reset_environment_context()
 
