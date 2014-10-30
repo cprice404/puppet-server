@@ -70,7 +70,7 @@ class Puppet::Server::Master
     # TODO: push this into Puppet::Server::Config
     Puppet::Server::HttpClient.initialize_settings(puppet_server_config)
     Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
-    Puppet::Environments::Cached.cache_entry_factory_class = Puppet::Server::Environments::Cached::FlushableTTLEntryFactory
+    Puppet::Environments::Cached.cache_expiration_service_class = Puppet::Server::Environments::Cached::CacheExpirationService
 
     reset_environment_context()
 

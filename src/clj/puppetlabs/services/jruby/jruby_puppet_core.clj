@@ -240,7 +240,9 @@
       (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path))
     (isExpired [this env-name]
       (println "CHECKING EXPIRY FOR:" env-name)
-      false)))
+      true)
+    (removeEnvironment [this env-name]
+      (println "REMOVING ENVIRONMENT:" env-name))))
 
 (schema/defn ^:always-validate
   create-pool-context :- PoolContext

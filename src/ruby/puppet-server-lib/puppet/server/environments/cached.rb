@@ -1,20 +1,22 @@
 require 'puppet/server/environments'
 require 'puppet/environments'
 
-module Puppet::Server::Environments::Cached
-  class FlushableTTLEntry < Puppet::Environments::Cached::Entry
-    def initialize(wrapped, env)
-      super env
-      @wrapped = wrapped
-      puts "CREATING AUTOFLUSH CACHE ENTRY FOR: #{env}"
-      puts "AUTOFLUSH MODULEPATH: #{env.modulepath}"
+class Puppet::Server::Environments::Cached
+  class CacheExpirationService
+    def initialize()
+      puts "CREATING CACHE EXPIRATION SERVICE"
+    end
+
+    def created(env)
+      puts "REGISTERING CACHED ENVIRONMENT: #{env}"
+      puts "CACHED ENV MODULEPATH: #{env.modulepath}"
       Puppet::Server::Config.environment_registry.register_environment(env.name, env.modulepath)
       # @ctime = Time.now
     end
 
-    def expired?
-      puts "AUTOFLUSH CHECKING EXPIRY FOR '#{value.name}'"
-      Puppet::Server::Config.environment_registry.is_expired?(value.name) || @wrapped.expired?
+    def expired?(env_name)
+      puts "CACHE SERVICE CHECKING EXPIRY FOR '#{env_name}'"
+      Puppet::Server::Config.environment_registry.is_expired?(env_name)
       # false
       # puts "AUTOFLUSH EXPIRED? ctime: #{@ctime} (#{@ctime.class})"
       # mtime = Puppet::Server::Config.environment_registry.get_environment_modified_time(value.name).to_date
@@ -22,17 +24,9 @@ module Puppet::Server::Environments::Cached
       # puts "AUTOFLUSH RETURNING EXPIRED? #{@ctime} <= #{mtime} ? #{@ctime <= mtime}"
       # @ctime <= mtime
     end
-  end
 
-  class FlushableTTLEntryFactory
-    def initialize
-      @ttl_factory = Puppet::Environments::Cached::TTLEntryFactory.new
-    end
-
-    def create_entry(env, conf)
-      entry = @ttl_factory.create_entry(env, conf)
-      FlushableTTLEntry.new(entry, env)
+    def evicted(env_name)
+      puts "CACHE SERVICE EVICTING CACHE ENTRY FOR #{env_name}"
     end
   end
-
 end
