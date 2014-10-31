@@ -1,11 +1,13 @@
 require 'puppet/server'
 
 require 'puppet/network/http_pool'
+require 'puppet/environments'
 
+require 'puppet/server/logger'
 require 'puppet/server/jvm_profiler'
 require 'puppet/server/http_client'
-require 'puppet/server/logger'
 require 'puppet/server/execution'
+require 'puppet/server/environments/cached'
 
 require 'java'
 java_import com.puppetlabs.certificate_authority.CertificateAuthority
@@ -18,7 +20,6 @@ class Puppet::Server::Config
 
     if puppet_server_config.has_key?("profiler")
       @profiler = Puppet::Server::JvmProfiler.new(puppet_server_config["profiler"])
-
     end
     Puppet::Server::HttpClient.initialize_settings(puppet_server_config)
     Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
@@ -27,6 +28,9 @@ class Puppet::Server::Config
     end
 
     Puppet::Server::Execution.initialize_execution_stub
+
+    Puppet::Environments::Cached.cache_expiration_service =
+        Puppet::Server::Environments::Cached::CacheExpirationService.new(puppet_server_config["environment_registry"])
   end
 
   def self.ssl_context
