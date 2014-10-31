@@ -3,6 +3,7 @@ require 'puppet/file_serving/metadata'
 require 'puppet/file_serving/content'
 require 'puppet/network/http/handler'
 require 'puppet/network/http_pool'
+require 'puppet/environments'
 require 'puppet/application/master'
 
 require 'puppet/util/profiler'
@@ -10,9 +11,8 @@ require 'puppet/util/profiler'
 require 'puppet/server'
 require 'puppet/server/config'
 require 'puppet/server/logger'
-require 'puppet/server/http_client'
-require 'puppet/server/jvm_profiler'
 require 'puppet/server/certificate'
+require 'puppet/server/environments/cached'
 
 require 'java'
 java_import com.puppetlabs.puppetserver.ExecutionStubImpl
@@ -55,8 +55,8 @@ class Puppet::Server::Master
     if Puppet::Server::Config.profiler
       Puppet::Util::Profiler.add_profiler(Puppet::Server::Config.profiler)
     end
-
-    Puppet.info("Puppet settings initialized; run mode: #{Puppet.run_mode.name}")
+    Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
+    Puppet::Environments::Cached.cache_expiration_service = Puppet::Server::Environments::Cached::CacheExpirationService.new
 
     master_run_mode = Puppet::Util::RunMode[:master]
     app_defaults = Puppet::Settings.app_defaults_for_run_mode(master_run_mode).
@@ -225,7 +225,6 @@ class Puppet::Server::Master
     # This use of configured environment is correct, this is used to establish
     # the defaults for an application that does not override, or where an override
     # has not been made from the command line.
-    #
     configured_environment_name = Puppet[:environment]
     configured_environment =
       Puppet.lookup(:environments).get(configured_environment_name)

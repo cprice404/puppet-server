@@ -4,7 +4,7 @@
            (org.jruby RubyInstanceConfig$CompileMode CompatVersion)
            (org.jruby.embed ScriptingContainer LocalContextScope)
            (clojure.lang Atom)
-           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet))
+           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet EnvironmentRegistry))
   (:require [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [schema.core :as schema]
@@ -67,13 +67,17 @@
 
     * :http-client-cipher-suites - A list of legal SSL cipher suites that may
         be used when https client requests are made."
-  {:ruby-load-path [schema/Str]
-   :gem-home       schema/Str
-   (schema/optional-key :master-conf-dir) schema/Str
-   (schema/optional-key :master-var-dir) schema/Str
-   (schema/optional-key :max-active-instances) schema/Int
+  ;; TODO: add profiler to this map?
+  ;; TODO: add docs re: env registry
+  {:ruby-load-path                                  [schema/Str]
+   :gem-home                                        schema/Str
+   (schema/optional-key :master-conf-dir)           schema/Str
+   (schema/optional-key :master-var-dir)            schema/Str
+   (schema/optional-key :max-active-instances)      schema/Int
    (schema/optional-key :http-client-ssl-protocols) [schema/Str]
-   (schema/optional-key :http-client-cipher-suites) [schema/Str]})
+   (schema/optional-key :http-client-cipher-suites) [schema/Str]
+   :environment-registry                            EnvironmentRegistry
+   })
 
 (def PoolState
   "A map that describes all attributes of a particular JRubyPuppet pool."
@@ -142,7 +146,8 @@
   [config   :- JRubyPuppetConfig
    profiler :- (schema/maybe PuppetProfiler)]
   (let [{:keys [ruby-load-path gem-home master-conf-dir master-var-dir
-                http-client-ssl-protocols http-client-cipher-suites]} config]
+                http-client-ssl-protocols http-client-cipher-suites
+                environment-registry]} config]
     (when-not ruby-load-path
       (throw (Exception.
                "JRuby service missing config value 'ruby-load-path'")))
@@ -227,6 +232,18 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
+
+(defn environment-registry
+  []
+  (reify
+    EnvironmentRegistry
+    (registerEnvironment [this env-name module-path]
+      (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path))
+    (isExpired [this env-name]
+      (println "CHECKING EXPIRY FOR:" env-name)
+      true)
+    (removeEnvironment [this env-name]
+      (println "REMOVING ENVIRONMENT:" env-name))))
 
 (schema/defn ^:always-validate
   create-pool-context :- PoolContext
