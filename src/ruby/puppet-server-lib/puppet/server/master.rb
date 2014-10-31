@@ -3,6 +3,7 @@ require 'puppet/file_serving/metadata'
 require 'puppet/file_serving/content'
 require 'puppet/network/http/handler'
 require 'puppet/network/http_pool'
+require 'puppet/environments'
 require 'puppet/application/master'
 
 require 'puppet/util/profiler'
@@ -13,6 +14,7 @@ require 'puppet/server/logger'
 require 'puppet/server/http_client'
 require 'puppet/server/jvm_profiler'
 require 'puppet/server/certificate'
+require 'puppet/server/environments/cached'
 
 require 'java'
 java_import com.puppetlabs.puppetserver.ExecutionStubImpl
@@ -48,6 +50,7 @@ class Puppet::Server::Master
     # TODO: find out if this is actually the best way to set the run mode
     Puppet.settings.preferred_run_mode = :master
 
+    Puppet::Server::Config.initialize_settings(puppet_server_config)
     Puppet::Server::Logger.init_logging
     Puppet::Server::Master::initialize_execution_stub
 
@@ -64,6 +67,11 @@ class Puppet::Server::Master
                :facts_terminus => 'yaml'})
     Puppet.settings.initialize_app_defaults(app_defaults)
 
+    # TODO: push this into Puppet::Server::Config
+    Puppet::Server::HttpClient.initialize_settings(puppet_server_config)
+    Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
+    Puppet::Environments::Cached.cache_expiration_service = Puppet::Server::Environments::Cached::CacheExpirationService.new
+
     reset_environment_context()
 
     Puppet.settings.use :main, :master, :ssl, :metrics
@@ -75,9 +83,6 @@ class Puppet::Server::Master
     Puppet::Node.indirection.cache_class = Puppet[:node_cache_terminus]
 
     configure_indirector_routes()
-
-    Puppet::Server::HttpClient.initialize_settings(puppet_server_config)
-    Puppet::Network::HttpPool.http_client_class = Puppet::Server::HttpClient
 
     # Tell Puppet's network layer which routes we are willing handle - which is
     # all of them.  This is copied directly out of the WEBrick handler.

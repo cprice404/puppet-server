@@ -7,6 +7,10 @@ java_import java.io.FileReader
 
 class Puppet::Server::Config
 
+  def self.initialize_settings(puppet_server_config)
+    @environment_registry = puppet_server_config["environment_registry"]
+  end
+
   def self.ssl_context
     # Initialize an SSLContext for use during HTTPS client requests.
     # Do this lazily due to startup-ordering issues - to give the CA
@@ -18,5 +22,9 @@ class Puppet::Server::Config
           FileReader.new(Puppet[:localcacert]))
     end
     @ssl_context
+  end
+
+  def self.environment_registry
+    @environment_registry
   end
 end
