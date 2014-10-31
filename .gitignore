@@ -13,3 +13,4 @@ log
 vendor
 .nrepl-port
 profiles.clj
+dev/user.clj
