@@ -109,13 +109,9 @@
   (clojure.pprint/pprint
     (map puppet-environment-state (jruby-pool))))
 
-;(defn puppet-environment-statuses
-;  []
-;  (map :environment-registry (jruby-pool)))
-
-;(defn puppet-environment)
-
-;(defn evict-puppet-environment-cache
-;  []
-;  (let [registry (puppet-environment-registry)]
-;    (println "REGISTRY:" registry)))
+(defn mark-all-environments-stale
+  []
+  (map #(-> %
+            :environment-registry
+            jruby/mark-all-environments-stale)
+       (jruby-pool)))

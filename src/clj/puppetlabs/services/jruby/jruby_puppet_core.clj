@@ -111,9 +111,11 @@
 
 (defn environment-registry
   []
-  (let [state (atom {})
-        mark-all-stale                                      ;(fn [])
-        ]
+  (let [state          (atom {})
+        mark-stale     (fn [acc env-name]
+                         (assoc-in acc [env-name :stale] true))
+        mark-all-stale (fn [m]
+                         (reduce mark-stale m (keys m)))]
     (reify
       EnvironmentRegistry
       (registerEnvironment [this env-name module-path]
@@ -134,7 +136,7 @@
       EnvironmentStateContainer
       (environment-state [this] state)
       (mark-all-environments-stale [this]
-        (swap! state (fn [m] (map mark-all-stale m)))))))
+        (swap! state mark-all-stale)))))
 
 (defn prep-scripting-container
   [scripting-container ruby-load-path gem-home]
