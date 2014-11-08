@@ -12,6 +12,9 @@
             [clojure.tools.namespace.repl :refer (refresh)]
             [clojure.java.io :as io]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Configuration
+
 (defn jvm-puppet-conf
   "This function returns a map containing all of the config settings that
   will be used when running Puppet Server in the repl.  It provides some
@@ -31,6 +34,9 @@
                              :ssl-host    "localhost"
                              :ssl-port    8140}
      :certificate-authority {:certificate-status {:client-whitelist []}}}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Basic system life cycle
 
 (def system nil)
 
@@ -61,12 +67,30 @@
   (init)
   (start))
 
-(defn context []
-  @(tka/app-context system))
-
-(defn print-context []
-  (clojure.pprint/pprint (context)))
-
 (defn reset []
   (stop)
   (refresh :after 'user-repl/go))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Utilities for interacting with running system
+
+(defn context
+  ([]
+   (context []))
+  ([keys]
+   (get-in @(tka/app-context system) keys)))
+
+(defn print-context
+  ([]
+   (print-context []))
+  ([keys]
+   (clojure.pprint/pprint (context keys))))
+
+(defn puppet-environment-registry
+  []
+  (context [:JRubyPuppetService :pool-context :config :environment-registry]))
+
+(defn evict-puppet-environment-cache
+  []
+  (let [registry (puppet-environment-registry)]
+    (println "REGISTRY:" registry)))

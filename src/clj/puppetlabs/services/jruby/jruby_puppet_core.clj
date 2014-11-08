@@ -235,17 +235,23 @@
 
 (defn environment-registry
   []
-  (reify
-    EnvironmentRegistry
-    (registerEnvironment [this env-name module-path]
-      (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path))
-    (isExpired [this env-name]
-      (println "CHECKING EXPIRY FOR:" env-name)
-      ;true
-      false
-      )
-    (removeEnvironment [this env-name]
-      (println "REMOVING ENVIRONMENT:" env-name))))
+  (let [registry (atom {})]
+    (reify
+      EnvironmentRegistry
+      (registerEnvironment [this env-name module-path]
+        (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path)
+        (swap! registry assoc env-name false)
+        nil)
+      (isExpired [this env-name]
+        (println "CHECKING EXPIRY FOR:" env-name)
+        (get @registry env-name)
+        ;true
+        ;false
+        )
+      (removeEnvironment [this env-name]
+        (println "REMOVING ENVIRONMENT:" env-name)
+        (swap! registry dissoc env-name)
+        nil))))
 
 (schema/defn ^:always-validate
   create-pool-context :- PoolContext
