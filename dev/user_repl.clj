@@ -3,6 +3,7 @@
             [puppetlabs.services.master.master-service :refer [master-service]]
             [puppetlabs.services.request-handler.request-handler-service :refer [request-handler-service]]
             [puppetlabs.services.jruby.jruby-puppet-service :refer [jruby-puppet-pooled-service]]
+            [puppetlabs.services.jruby.jruby-puppet-core :as jruby]
             [puppetlabs.services.jruby.testutils :as jruby-testutils]
             [puppetlabs.services.puppet-profiler.puppet-profiler-service :refer [puppet-profiler-service]]
             [puppetlabs.services.config.puppet-server-config-service :refer [puppet-server-config-service]]
@@ -10,7 +11,8 @@
             [puppetlabs.trapperkeeper.core :as tk]
             [puppetlabs.trapperkeeper.app :as tka]
             [clojure.tools.namespace.repl :refer (refresh)]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.set :as set]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Configuration
@@ -86,11 +88,34 @@
   ([keys]
    (clojure.pprint/pprint (context keys))))
 
-(defn puppet-environment-registry
+(defn jruby-pool
   []
-  (context [:JRubyPuppetService :pool-context :config :environment-registry]))
+  (-> (context [:JRubyPuppetService :pool-context :pool-state])
+      deref
+      :pool
+      .iterator
+      iterator-seq))
 
-(defn evict-puppet-environment-cache
+(defn puppet-environment-state
+  [jruby-instance]
+  {:jruby-instance-id (:id jruby-instance)
+   :environment-states (-> jruby-instance
+                             :environment-registry
+                             jruby/environment-state
+                             deref)})
+
+(defn print-puppet-environment-states
   []
-  (let [registry (puppet-environment-registry)]
-    (println "REGISTRY:" registry)))
+  (clojure.pprint/pprint
+    (map puppet-environment-state (jruby-pool))))
+
+;(defn puppet-environment-statuses
+;  []
+;  (map :environment-registry (jruby-pool)))
+
+;(defn puppet-environment)
+
+;(defn evict-puppet-environment-cache
+;  []
+;  (let [registry (puppet-environment-registry)]
+;    (println "REGISTRY:" registry)))

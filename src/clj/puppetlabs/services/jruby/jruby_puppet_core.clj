@@ -40,6 +40,10 @@
   ;; state in a thread-safe manner.
   [err])
 
+(defprotocol EnvironmentStateContainer
+  (environment-state [this])
+  (mark-all-environments-stale [this]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schemas
 
@@ -75,9 +79,7 @@
    (schema/optional-key :master-var-dir)            schema/Str
    (schema/optional-key :max-active-instances)      schema/Int
    (schema/optional-key :http-client-ssl-protocols) [schema/Str]
-   (schema/optional-key :http-client-cipher-suites) [schema/Str]
-   :environment-registry                            EnvironmentRegistry
-   })
+   (schema/optional-key :http-client-cipher-suites) [schema/Str]})
 
 (def PoolState
   "A map that describes all attributes of a particular JRubyPuppet pool."
@@ -99,11 +101,40 @@
 
 (def JRubyPuppetInstance
   "A map with objects pertaining to an individual entry in the JRubyPuppet pool."
-  {:jruby-puppet JRubyPuppet
-   :scripting-container ScriptingContainer})
+  {:id                    schema/Int
+   :jruby-puppet          JRubyPuppet
+   :scripting-container   ScriptingContainer
+   :environment-registry  EnvironmentRegistry})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Private
+
+(defn environment-registry
+  []
+  (let [state (atom {})
+        mark-all-stale                                      ;(fn [])
+        ]
+    (reify
+      EnvironmentRegistry
+      (registerEnvironment [this env-name module-path]
+        (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path)
+        (swap! state assoc-in [(keyword env-name) :stale] false)
+        nil)
+      (isExpired [this env-name]
+        (println "CHECKING EXPIRY FOR:" env-name)
+        (get-in @state [(keyword env-name) :stale])
+        ;true
+        ;false
+        )
+      (removeEnvironment [this env-name]
+        (println "REMOVING ENVIRONMENT:" env-name)
+        (swap! state dissoc (keyword env-name))
+        nil)
+
+      EnvironmentStateContainer
+      (environment-state [this] state)
+      (mark-all-environments-stale [this]
+        (swap! state (fn [m] (map mark-all-stale m)))))))
 
 (defn prep-scripting-container
   [scripting-container ruby-load-path gem-home]
@@ -143,15 +174,16 @@
 (schema/defn ^:always-validate
   create-pool-instance :- JRubyPuppetInstance
   "Creates a new pool instance."
-  [config   :- JRubyPuppetConfig
+  [id       :- schema/Int
+   config   :- JRubyPuppetConfig
    profiler :- (schema/maybe PuppetProfiler)]
   (let [{:keys [ruby-load-path gem-home master-conf-dir master-var-dir
-                http-client-ssl-protocols http-client-cipher-suites
-                environment-registry]} config]
+                http-client-ssl-protocols http-client-cipher-suites]} config]
     (when-not ruby-load-path
       (throw (Exception.
                "JRuby service missing config value 'ruby-load-path'")))
     (let [scripting-container   (create-scripting-container ruby-load-path gem-home)
+          env-registry          (environment-registry)
           ruby-puppet-class     (.runScriptlet scripting-container "Puppet::Server::Master")
           puppet-config         (HashMap.)
           puppet-server-config  (HashMap.)]
@@ -165,15 +197,17 @@
       (when http-client-cipher-suites
         (.put puppet-server-config "cipher_suites" (into-array String http-client-cipher-suites)))
       (.put puppet-server-config "profiler" profiler)
-      (.put puppet-server-config "environment_registry" environment-registry)
+      (.put puppet-server-config "environment_registry" env-registry)
 
-      {:jruby-puppet (.callMethod scripting-container
-                                  ruby-puppet-class
-                                  "new"
-                                  (into-array Object
-                                              [puppet-config puppet-server-config])
-                                              JRubyPuppet)
-       :scripting-container scripting-container})))
+      {:id                    id
+       :jruby-puppet          (.callMethod scripting-container
+                                           ruby-puppet-class
+                                           "new"
+                                           (into-array Object
+                                                       [puppet-config puppet-server-config])
+                                           JRubyPuppet)
+       :scripting-container   scripting-container
+       :environment-registry  env-registry})))
 
 (schema/defn ^:always-validate
   get-pool-state :- PoolState
@@ -233,26 +267,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
 
-(defn environment-registry
-  []
-  (let [registry (atom {})]
-    (reify
-      EnvironmentRegistry
-      (registerEnvironment [this env-name module-path]
-        (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path)
-        (swap! registry assoc env-name false)
-        nil)
-      (isExpired [this env-name]
-        (println "CHECKING EXPIRY FOR:" env-name)
-        (get @registry env-name)
-        ;true
-        ;false
-        )
-      (removeEnvironment [this env-name]
-        (println "REMOVING ENVIRONMENT:" env-name)
-        (swap! registry dissoc env-name)
-        nil))))
-
 (schema/defn ^:always-validate
   create-pool-context :- PoolContext
   "Creates a new JRubyPuppet pool context with empty pools. Once the JRubyPuppet
@@ -274,11 +288,12 @@
     (try
       (let [count (.remainingCapacity pool)]
         (dotimes [i count]
-          (log/debugf "Priming JRubyPuppet instance %d of %d" (inc i) count)
-          (.put pool (create-pool-instance config (:profiler context)))
-          (log/infof "Finished creating JRubyPuppet instance %d of %d"
-                     (inc i) count))
-        (mark-as-initialized! context))
+          (let [id (inc i)]
+            (log/debugf "Priming JRubyPuppet instance %d of %d" id count)
+            (.put pool (create-pool-instance id config (:profiler context)))
+            (log/infof "Finished creating JRubyPuppet instance %d of %d"
+                       id count))
+          (mark-as-initialized! context)))
       (catch Exception e
         (.clear pool)
         (.put pool (PoisonPill. e))
