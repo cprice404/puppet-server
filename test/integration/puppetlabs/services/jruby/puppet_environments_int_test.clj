@@ -1,6 +1,6 @@
-(ns puppetlabs.services.jruby.puppet-environments-test
+(ns puppetlabs.services.jruby.puppet-environments-int-test
   (:require [clojure.test :refer :all]
-            [puppetlabs.services.jruby.puppet-environments :as puppet-env]
+            ;[puppetlabs.services.jruby.puppet-environments :as puppet-env]
             [puppetlabs.puppetserver.bootstrap-testutils :as bootstrap]
             [puppetlabs.http.client.sync :as http-client]
             [puppetlabs.services.jruby.jruby-testutils :as jruby-testutils]

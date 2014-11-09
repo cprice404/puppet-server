@@ -44,6 +44,7 @@
 
   :source-paths ["src/clj"]
   :java-source-paths ["src/java"]
+  :test-paths ["test/unit" "test/integration"]
   :resource-paths ["resources" "src/ruby"]
 
   :repositories [["releases" "http://nexus.delivery.puppetlabs.net/content/repositories/releases/"]
