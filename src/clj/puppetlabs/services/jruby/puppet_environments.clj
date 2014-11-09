@@ -15,7 +15,7 @@
                          (reduce mark-stale m (keys m)))]
     (reify
       EnvironmentRegistry
-      (registerEnvironment [this env-name module-path]
+      (registerEnvironment [this env-name]
         (log/debugf "Registering environment '%s'" env-name)
         (swap! state assoc-in [(keyword env-name) :stale] false)
         nil)

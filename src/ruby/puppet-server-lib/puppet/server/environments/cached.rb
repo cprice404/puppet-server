@@ -8,7 +8,9 @@ class Puppet::Server::Environments::Cached
     end
 
     def created(env)
-      @environment_registry.register_environment(env.name, env.modulepath)
+      # `env` should be of type Puppet::Node::Environment, so we
+      # can access properties like `modulepath` if we ever need to
+      @environment_registry.register_environment(env.name)
     end
 
     def expired?(env_name)
