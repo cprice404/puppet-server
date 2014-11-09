@@ -3,7 +3,7 @@
             [puppetlabs.services.master.master-service :refer [master-service]]
             [puppetlabs.services.request-handler.request-handler-service :refer [request-handler-service]]
             [puppetlabs.services.jruby.jruby-puppet-service :refer [jruby-puppet-pooled-service]]
-            [puppetlabs.services.jruby.jruby-puppet-core :as jruby]
+            [puppetlabs.services.jruby.puppet-environments :as puppet-env]
             [puppetlabs.services.jruby.testutils :as jruby-testutils]
             [puppetlabs.services.puppet-profiler.puppet-profiler-service :refer [puppet-profiler-service]]
             [puppetlabs.services.config.puppet-server-config-service :refer [puppet-server-config-service]]
@@ -101,7 +101,7 @@
   {:jruby-instance-id (:id jruby-instance)
    :environment-states (-> jruby-instance
                              :environment-registry
-                             jruby/environment-state
+                             puppet-env/environment-state
                              deref)})
 
 (defn print-puppet-environment-states
@@ -113,5 +113,5 @@
   []
   (map #(-> %
             :environment-registry
-            jruby/mark-all-environments-stale)
+            puppet-env/mark-all-environments-stale)
        (jruby-pool)))

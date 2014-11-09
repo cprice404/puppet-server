@@ -4,11 +4,13 @@
            (org.jruby RubyInstanceConfig$CompileMode CompatVersion)
            (org.jruby.embed ScriptingContainer LocalContextScope)
            (clojure.lang Atom)
-           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet EnvironmentRegistry))
+           (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet
+                                        EnvironmentRegistry))
   (:require [clojure.tools.logging :as log]
             [me.raynes.fs :as fs]
             [schema.core :as schema]
-            [puppetlabs.kitchensink.core :as ks]))
+            [puppetlabs.kitchensink.core :as ks]
+            [puppetlabs.services.jruby.puppet-environments :as puppet-env]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Definitions
@@ -39,10 +41,6 @@
   ;; to populate it.  This can be used by the `borrow` functions to detect error
   ;; state in a thread-safe manner.
   [err])
-
-(defprotocol EnvironmentStateContainer
-  (environment-state [this])
-  (mark-all-environments-stale [this]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Schemas
@@ -104,39 +102,13 @@
   {:id                    schema/Int
    :jruby-puppet          JRubyPuppet
    :scripting-container   ScriptingContainer
-   :environment-registry  EnvironmentRegistry})
+   :environment-registry  (schema/both
+                            EnvironmentRegistry
+                            (schema/pred
+                              #(satisfies? puppet-env/EnvironmentStateContainer %)))})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Private
-
-(defn environment-registry
-  []
-  (let [state          (atom {})
-        mark-stale     (fn [acc env-name]
-                         (assoc-in acc [env-name :stale] true))
-        mark-all-stale (fn [m]
-                         (reduce mark-stale m (keys m)))]
-    (reify
-      EnvironmentRegistry
-      (registerEnvironment [this env-name module-path]
-        (println "REGISTERING ENVIRONMENT:" env-name "module path:" module-path)
-        (swap! state assoc-in [(keyword env-name) :stale] false)
-        nil)
-      (isExpired [this env-name]
-        (println "CHECKING EXPIRY FOR:" env-name)
-        (get-in @state [(keyword env-name) :stale])
-        ;true
-        ;false
-        )
-      (removeEnvironment [this env-name]
-        (println "REMOVING ENVIRONMENT:" env-name)
-        (swap! state dissoc (keyword env-name))
-        nil)
-
-      EnvironmentStateContainer
-      (environment-state [this] state)
-      (mark-all-environments-stale [this]
-        (swap! state mark-all-stale)))))
 
 (defn prep-scripting-container
   [scripting-container ruby-load-path gem-home]
@@ -185,7 +157,7 @@
       (throw (Exception.
                "JRuby service missing config value 'ruby-load-path'")))
     (let [scripting-container   (create-scripting-container ruby-load-path gem-home)
-          env-registry          (environment-registry)
+          env-registry          (puppet-env/environment-registry)
           ruby-puppet-class     (.runScriptlet scripting-container "Puppet::Server::Master")
           puppet-config         (HashMap.)
           puppet-server-config  (HashMap.)]
