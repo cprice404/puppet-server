@@ -4,7 +4,8 @@
   (:require [puppetlabs.services.jruby.jruby-puppet-core :as jruby-core]
             [puppetlabs.services.puppet-profiler.puppet-profiler-core :as profiler-core]
             [me.raynes.fs :as fs]
-            [puppetlabs.services.jruby.puppet-environments :as puppet-env]))
+            [puppetlabs.services.jruby.puppet-environments :as puppet-env]
+            [puppetlabs.trapperkeeper.app :as tk-app]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -93,3 +94,20 @@
   (with-redefs
     [jruby-core/create-pool-instance create-mock-pool-instance]
     (f)))
+
+(defn jruby-pool
+  [app]
+  (-> (tk-app/app-context app)
+      deref
+      (get-in [:JRubyPuppetService :pool-context :pool-state])
+      deref
+      :pool
+      .iterator
+      iterator-seq))
+
+(defn mark-all-environments-stale
+  [app]
+  (doseq [jruby-instance (jruby-pool app)]
+    (-> jruby-instance
+        :environment-registry
+        puppet-env/mark-all-environments-stale)))
