@@ -70,6 +70,11 @@
              :uberjar {:aot [puppetlabs.trapperkeeper.main]}
              :ci {:plugins [[lein-pprint "1.1.1"]]}}
 
+  :test-selectors {:default (complement :integration)
+                   :integration :integration
+                   :unit (complement :integration)
+                   :all (constantly true)}
+
   :aliases {"gem" ["trampoline" "run" "-m" "puppetlabs.puppetserver.cli.gem"]}
 
   ; tests use a lot of PermGen (jruby instances)
