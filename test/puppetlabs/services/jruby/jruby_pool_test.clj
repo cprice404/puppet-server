@@ -3,8 +3,8 @@
   (:require [clojure.test :refer :all]
             [puppetlabs.kitchensink.core :as ks]
             [puppetlabs.services.jruby.jruby-puppet-core :refer :all :as core]
-            [puppetlabs.services.jruby.testutils :as testutils]
-            [puppetlabs.services.jruby.testutils :as jruby-testutils]))
+            [puppetlabs.services.jruby.jruby-testutils :as testutils]
+            [puppetlabs.services.jruby.jruby-testutils :as jruby-testutils]))
 
 (use-fixtures :each testutils/mock-pool-instance-fixture)
 

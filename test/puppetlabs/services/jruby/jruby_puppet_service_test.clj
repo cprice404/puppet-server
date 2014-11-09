@@ -4,7 +4,7 @@
   (:require [clojure.test :refer :all]
             [puppetlabs.services.protocols.jruby-puppet :as jruby-protocol]
             [puppetlabs.services.jruby.jruby-puppet-core :as jruby-puppet-core]
-            [puppetlabs.services.jruby.testutils :as testutils]
+            [puppetlabs.services.jruby.jruby-testutils :as testutils]
             [puppetlabs.services.jruby.jruby-puppet-service :refer :all]
             [puppetlabs.trapperkeeper.app :as app]
             [puppetlabs.trapperkeeper.core :as tk]

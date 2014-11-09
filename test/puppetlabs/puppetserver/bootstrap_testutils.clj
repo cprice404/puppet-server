@@ -11,12 +11,23 @@
 (def dev-bootstrap-file
   "./dev/bootstrap.cfg")
 
+(def logging-test-conf-file
+  "./dev-resources/logback-test.xml")
+
+(def master-conf-dir
+  "./target/master-conf")
+
+(def master-var-dir
+  "./target/master-var")
+
 (defmacro with-puppetserver-running
   [app config-overrides & body]
   (let [tmp-conf (ks/temp-file "puppet-server" ".conf")]
     (fs/copy dev-config-file tmp-conf)
     (let [config (-> (tk-config/load-config tmp-conf)
-                     (assoc-in [:global :logging-config] "./dev-resources/logback-test.xml")
+                     (assoc-in [:global :logging-config] logging-test-conf-file)
+                     (assoc-in [:jruby-puppet :master-conf-dir] master-conf-dir)
+                     (assoc-in [:jruby-puppet :master-var-dir] master-var-dir)
                      (ks/deep-merge config-overrides))]
       `(let [services# (tk-bootstrap/parse-bootstrap-config! ~dev-bootstrap-file)]
          (tk-testutils/with-app-with-config
