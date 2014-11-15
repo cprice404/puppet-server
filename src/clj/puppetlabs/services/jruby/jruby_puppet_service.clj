@@ -26,11 +26,12 @@
                                      (get-in-config [:http-client :cipher-suites])))
           service-id        (tk-services/service-id this)
           agent-shutdown-fn (partial shutdown-on-error service-id)
-          prime-pool-agent  (core/jruby-pool-agent agent-shutdown-fn)]
+          prime-pool-agent  (core/jruby-pool-agent agent-shutdown-fn)
+          profiler          (get-profiler)]
       (core/verify-config-found! config)
       (log/info "Initializing the JRuby service")
-      (let [pool-context (core/create-pool-context config (get-profiler))]
-        (core/send-prime-pool! prime-pool-agent pool-context)
+      (let [pool-context (core/create-pool-context config profiler)]
+        (core/send-prime-pool! prime-pool-agent (:pool-state pool-context) config profiler)
         (-> context
             (assoc :pool-context pool-context)
             (assoc :prime-pool-agent prime-pool-agent)))))
