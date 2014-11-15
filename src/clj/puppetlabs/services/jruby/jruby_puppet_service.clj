@@ -18,21 +18,22 @@
                            [:PuppetProfilerService get-profiler]]
   (init
     [this context]
-    (let [config (-> (get-in-config [:jruby-puppet])
-                     (assoc :ruby-load-path (get-in-config [:os-settings :ruby-load-path]))
-                     (assoc :http-client-ssl-protocols
-                            (get-in-config [:http-client :ssl-protocols]))
-                     (assoc :http-client-cipher-suites
-                            (get-in-config [:http-client :cipher-suites])))]
+    (let [config            (-> (get-in-config [:jruby-puppet])
+                              (assoc :ruby-load-path (get-in-config [:os-settings :ruby-load-path]))
+                              (assoc :http-client-ssl-protocols
+                                     (get-in-config [:http-client :ssl-protocols]))
+                              (assoc :http-client-cipher-suites
+                                     (get-in-config [:http-client :cipher-suites])))
+          service-id        (tk-services/service-id this)
+          agent-shutdown-fn (partial shutdown-on-error service-id)
+          prime-pool-agent  (core/jruby-pool-agent agent-shutdown-fn)]
       (core/verify-config-found! config)
       (log/info "Initializing the JRuby service")
       (let [pool-context (core/create-pool-context config (get-profiler))]
-        (future
-          (shutdown-on-error
-            (tk-services/service-id this)
-            #(core/prime-pools! pool-context)))
-
-        (assoc context :pool-context pool-context))))
+        (core/send-prime-pool! prime-pool-agent pool-context)
+        (-> context
+            (assoc :pool-context pool-context)
+            (assoc :prime-pool-agent prime-pool-agent)))))
 
   (borrow-instance
     [this]

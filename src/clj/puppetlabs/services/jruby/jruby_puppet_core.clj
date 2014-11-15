@@ -3,7 +3,7 @@
            (java.util HashMap)
            (org.jruby RubyInstanceConfig$CompileMode CompatVersion)
            (org.jruby.embed ScriptingContainer LocalContextScope)
-           (clojure.lang Atom)
+           (clojure.lang Atom Agent IFn)
            (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet
                                         EnvironmentRegistry))
   (:require [clojure.tools.logging :as log]
@@ -104,6 +104,16 @@
                             EnvironmentRegistry
                             (schema/pred
                               #(satisfies? puppet-env/EnvironmentStateContainer %)))})
+
+(def JRubyPoolAgent
+  "An agent configured for use in managing JRuby pools"
+  (schema/both Agent
+               (schema/pred
+                 (fn [a]
+                   (let [state @a]
+                     (and
+                       (map? state)
+                       (ifn? (:shutdown-on-error state))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Private
@@ -236,21 +246,8 @@
   [context :- PoolContext]
   (swap! (:pool-state context) #(assoc % :initialized? true)))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Public
-
 (schema/defn ^:always-validate
-  create-pool-context :- PoolContext
-  "Creates a new JRubyPuppet pool context with empty pools. Once the JRubyPuppet
-  pool object has been created, it will need to have its pools filled using
-  `prime-pools!`."
-  [config profiler]
-  {:config     config
-   :profiler   profiler
-   :pool-state (atom (create-pool-from-config config))})
-
-(schema/defn ^:always-validate
-  prime-pools!
+  prime-pool!
   "Sequentially fill the pool with new JRubyPuppet instances."
   [context :- PoolContext]
   (let [config (:config context)
@@ -270,6 +267,44 @@
         (.clear pool)
         (.put pool (PoisonPill. e))
         (throw (IllegalStateException. "There was a problem adding a JRubyPuppet instance to the pool." e))))))
+
+(schema/defn ^:always-validate
+  send-agent :- JRubyPoolAgent
+  "Utility function; given a JRubyPoolAgent, send the specified function.
+  Ensures that the function call is wrapped in a `shutdown-on-error`."
+  [jruby-agent :- JRubyPoolAgent
+   f :- IFn]
+  (letfn [(agent-fn [agent-ctxt]
+                    (let [shutdown-on-error (:shutdown-on-error agent-ctxt)]
+                      (shutdown-on-error f))
+                    agent-ctxt)]
+    (send jruby-agent agent-fn)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Public
+
+(schema/defn ^:always-validate
+  jruby-pool-agent :- JRubyPoolAgent
+  "Given a shutdown-on-error function, create an agent suitable for use in managing
+  JRuby pools."
+  [shutdown-on-error-fn :- IFn]
+  (agent {:shutdown-on-error shutdown-on-error-fn}))
+
+(schema/defn ^:always-validate
+  create-pool-context :- PoolContext
+  "Creates a new JRubyPuppet pool context with an empty pool. Once the JRubyPuppet
+  pool object has been created, it will need to be filled using `prime-pool!`."
+  [config profiler]
+  {:config     config
+   :profiler   profiler
+   :pool-state (atom (create-pool-from-config config))})
+
+(schema/defn ^:always-validate
+  send-prime-pool! :- JRubyPoolAgent
+  "Sends a request to the agent to prime the pool using the given pool context."
+  [prime-pool-agent :- JRubyPoolAgent
+   pool-context :- PoolContext]
+  (send-agent prime-pool-agent #(prime-pool! pool-context)))
 
 (schema/defn ^:always-validate
   free-instance-count
