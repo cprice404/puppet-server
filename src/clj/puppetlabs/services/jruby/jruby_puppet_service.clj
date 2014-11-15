@@ -23,11 +23,24 @@
                      (assoc :http-client-ssl-protocols
                             (get-in-config [:http-client :ssl-protocols]))
                      (assoc :http-client-cipher-suites
-                            (get-in-config [:http-client :cipher-suites])))]
+                            (get-in-config [:http-client :cipher-suites])))
+          prime-pool-agent  (agent nil)]
       (core/verify-config-found! config)
       (log/info "Initializing the JRuby service")
-      (let [pool-context (core/create-pool-context config (get-profiler))]
-        (future
+      (let [pool-context (core/create-pool-context config (get-profiler))
+            prime-pools-fn (fn []
+                             (println "PRIMING POOLS!")
+                             (core/prime-pools! pool-context))]
+        (println "SENDING FN TO AGENT")
+        (send prime-pool-agent (fn [_]
+                                 (println "PRIME POOL AGENT CALLED FN!")
+                                 (shutdown-on-error
+                                   (tk-services/service-id this)
+                                   prime-pools-fn)))
+        (Thread/sleep 1000)
+        (println "CHECKING FOR AGENT ERROR")
+        (println (agent-error prime-pool-agent))
+        #_(future
           (shutdown-on-error
             (tk-services/service-id this)
             #(core/prime-pools! pool-context)))
