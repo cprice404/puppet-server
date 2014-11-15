@@ -5,7 +5,8 @@
             [puppetlabs.services.jruby.jruby-testutils :as jruby-testutils]
             [me.raynes.fs :as fs]
             [cheshire.core :as json]
-            [puppetlabs.services.jruby.puppet-environments :as puppet-env]))
+            [puppetlabs.services.jruby.puppet-environments :as puppet-env]
+            [puppetlabs.trapperkeeper.app :as tk-app]))
 
 (def test-resources-dir
   "./dev-resources/puppetlabs/services/jruby/puppet_environments_int_test")
@@ -52,11 +53,18 @@
    :headers       {"Accept" "pson"}
    :as            :text})
 
+(defn service-context
+  [app service-id]
+  (-> (tk-app/app-context app)
+      deref
+      service-id))
+
 (defn wait-for-jrubies
   [app num-jrubies]
-  (while (< (count (jruby-testutils/jruby-pool app))
-            num-jrubies)
-    (Thread/sleep 100)))
+  (let [jruby-service-context (service-context app :JRubyPuppetService)]
+    (while (< (count (jruby-testutils/jruby-pool jruby-service-context))
+              num-jrubies)
+      (Thread/sleep 100))))
 
 (defn get-catalog
   []
@@ -126,7 +134,7 @@
         (is (catalog-contains? catalog1 "Notify" "hello1"))
         (is (not (catalog-contains? catalog1 "Notify" "hello2"))))
       ;; Now we call our code to mark the cache as stale.
-      (jruby-testutils/mark-all-environments-expired! app)
+      (jruby-testutils/mark-all-environments-expired! (service-context app :JRubyPuppetService))
       ;; Next catalog request goes to the second jruby instance,
       ;; where we should see 'hello2' regardless of caching.
       (let [catalog2 (get-catalog)]

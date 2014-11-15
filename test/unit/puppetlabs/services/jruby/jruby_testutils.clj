@@ -96,18 +96,17 @@
     (f)))
 
 (defn jruby-pool
-  [app]
-  (-> (tk-app/app-context app)
-      deref
-      (get-in [:JRubyPuppetService :pool-context :pool-state])
+  [service-context]
+  (-> service-context
+      (get-in [:pool-context :pool-state])
       deref
       :pool
       .iterator
       iterator-seq))
 
 (defn mark-all-environments-expired!
-  [app]
-  (doseq [jruby-instance (jruby-pool app)]
+  [service-context]
+  (doseq [jruby-instance (jruby-pool service-context)]
     (-> jruby-instance
         :environment-registry
         puppet-env/mark-all-environments-expired!)))

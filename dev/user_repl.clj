@@ -96,7 +96,7 @@
 (defn jruby-pool
   "Returns a reference to the current pool of JRuby interpreters."
   []
-  (jruby-testutils/jruby-pool system))
+  (jruby-testutils/jruby-pool (context [:JRubyPuppetService])))
 
 (defn puppet-environment-state
   "Given a JRuby instance, return the state information about the environments
@@ -119,4 +119,4 @@
   "Mark all environments, on all JRuby instances, stale so that they will
   be flushed from the environment cache."
   []
-  (jruby-testutils/mark-all-environments-expired! system))
+  (jruby-testutils/mark-all-environments-expired! (context [:JRubyPuppetService])))
