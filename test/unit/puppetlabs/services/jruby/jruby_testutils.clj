@@ -110,3 +110,20 @@
     (-> jruby-instance
         :environment-registry
         puppet-env/mark-all-environments-expired!)))
+
+(defn flush-jruby-pool!
+  [service-context]
+  (let [config      (get-in service-context [:pool-context :config])
+        profiler    (get-in service-context [:pool-context :profiler])
+        prime-agent (get-in service-context [:prime-pool-agent])
+        pool-state  (get-in service-context [:pool-context :pool-state])
+        old-pool    @pool-state
+        new-pool    (jruby-core/create-pool-from-config config)]
+    (println "Priming new pool")
+    (jruby-core/send-prime-pool! prime-agent new-pool config profiler)
+    (println "Waiting for an instance to become available")
+    (jruby-core/with-jruby-puppet jruby-puppet (:pool @new-pool)
+      (println "Successfully borrowed instance from new pool"))
+    (reset! pool-state @new-pool)
+    (println "Swapped new pool into place")
+    (jruby-core/free-instance-count)))

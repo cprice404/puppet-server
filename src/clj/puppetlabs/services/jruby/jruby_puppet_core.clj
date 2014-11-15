@@ -345,3 +345,19 @@
   [pool :- pool-queue-type
    instance :- JRubyPuppetInstance]
   (.put pool instance))
+
+(defmacro with-jruby-puppet
+  "Encapsulates the behavior of borrowing and returning an instance of
+  JRubyPuppet.  Example usage:
+
+  (let [pool (get-pool pool-context)]
+    (with-jruby-puppet
+      jruby-puppet
+      pool
+      (do-something-with-a-jruby-puppet-instance jruby-puppet)))"
+  [jruby-puppet pool & body]
+  `(let [~jruby-puppet (borrow-from-pool ~pool)]
+     (try
+       ~@body
+       (finally
+         (return-to-pool ~pool ~jruby-puppet)))))

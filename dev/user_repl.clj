@@ -120,3 +120,8 @@
   be flushed from the environment cache."
   []
   (jruby-testutils/mark-all-environments-expired! (context [:JRubyPuppetService])))
+
+(defn flush-jruby-pool!
+  "TODO"
+  []
+  (jruby-testutils/flush-jruby-pool! (context [:JRubyPuppetService])))
