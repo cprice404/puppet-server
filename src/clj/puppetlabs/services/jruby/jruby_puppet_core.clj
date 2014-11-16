@@ -257,6 +257,7 @@
   [pool-state :- PoolStateContainer
    config :- JRubyPuppetConfig
    profiler :- (schema/maybe PuppetProfiler)]
+  (println "In PRIME-POOL!")
   (let [pool (:pool @pool-state)]
     (log/debug (str "Initializing JRubyPuppet instances with the following settings:\n"
                     (ks/pprint-to-string config)))
@@ -274,12 +275,15 @@
         (.put pool (PoisonPill. e))
         (throw (IllegalStateException. "There was a problem adding a JRubyPuppet instance to the pool." e))))))
 
+
+
 (schema/defn ^:always-validate
   send-agent :- JRubyPoolAgent
   "Utility function; given a JRubyPoolAgent, send the specified function.
   Ensures that the function call is wrapped in a `shutdown-on-error`."
   [jruby-agent :- JRubyPoolAgent
    f :- IFn]
+  (println "SENDING TO AGENT:" jruby-agent)
   (letfn [(agent-fn [agent-ctxt]
                     (let [shutdown-on-error (:shutdown-on-error agent-ctxt)]
                       (shutdown-on-error f))
@@ -312,6 +316,7 @@
    pool-state :- PoolStateContainer
    config :- JRubyPuppetConfig
    profiler :- (schema/maybe PuppetProfiler)]
+  (println "IN SEND-PRIME-POOL!" prime-pool-agent)
   (send-agent prime-pool-agent #(prime-pool! pool-state config profiler)))
 
 (schema/defn ^:always-validate
@@ -364,3 +369,84 @@
        ~@body
        (finally
          (return-to-pool ~jruby-puppet)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Pool flush functionality (TODO: move agent code to separate namespace)
+
+(schema/defn ^:always-validate
+  flush-pool!
+  "TODO"
+  [pool-context :- PoolContext
+   new-pool :- PoolState]
+  (let [{:keys [config profiler pool-state]} pool-context
+        old-pool    @pool-state
+        ;new-pool    (create-pool-from-config config)
+         ]
+    ;(println "Priming new pool")
+    ;(send prime-agent (fn [x] (println "WASSSUP PRIMER!") x))
+    #_(send-prime-pool! prime-agent new-pool config profiler)
+    (println "Waiting for an instance to become available")
+    (with-jruby-puppet jruby-puppet (:pool new-pool)
+                       (println "Successfully borrowed instance from new pool"))
+    (reset! pool-state new-pool)
+    (println "Swapped new pool into place")
+    (println "Cleaning up old pool")
+    (doseq [i (range (:size old-pool))]
+      (let [id (inc i)
+            instance (borrow-from-pool (:pool old-pool))]
+        (println "Cleaning up instance" id "of" (:size old-pool))
+        (.terminate (:scripting-container instance))))))
+
+(schema/defn ^:always-validate
+  send-flush-pool! :- JRubyPoolAgent
+  "TODO"
+  [pool-context :- PoolContext
+   flush-agent :- JRubyPoolAgent
+   prime-agent :- JRubyPoolAgent]
+  (let [{:keys [config profiler                             ;pool-state
+                ]} pool-context
+        ;old-pool    @pool-state
+        new-pool    (create-pool-from-config config)]
+    (println "Priming new pool")
+    #_(send prime-agent (fn [x] (println "WASSSUP PRIMER!") x))
+    (send-prime-pool! prime-agent new-pool config profiler)
+    (send-agent flush-agent #(flush-pool! pool-context @new-pool))
+
+    ;(println "Waiting for an instance to become available")
+    ;(with-jruby-puppet jruby-puppet (:pool @new-pool)
+    ;                   (println "Successfully borrowed instance from new pool"))
+    ;(reset! pool-state @new-pool)
+    ;(println "Swapped new pool into place")
+    ;(println "Cleaning up old pool")
+    #_(doseq [i (range (:size old-pool))]
+      (let [id (inc i)
+            instance (borrow-from-pool (:pool old-pool))]
+        (println "Cleaning up instance" id "of" (:size old-pool))
+        (.terminate (:scripting-container instance)))))
+
+
+  )
+
+#_(schema/defn ^:always-validate
+  flush-pool!
+  "TODO"
+  [pool-context :- PoolContext
+   prime-agent :-  JRubyPoolAgent]
+  (let [{:keys [config profiler pool-state]} pool-context
+        old-pool    @pool-state
+        new-pool    (create-pool-from-config config)]
+    (println "Priming new pool")
+    (send-prime-pool! prime-agent new-pool config profiler)
+    (println "Waiting for an instance to become available")
+    (with-jruby-puppet jruby-puppet (:pool @new-pool)
+                       (println "Successfully borrowed instance from new pool"))
+    (reset! pool-state @new-pool)
+    (println "Swapped new pool into place")
+    (println "Cleaning up old pool")
+    (doseq [i (range (:size old-pool))]
+      (let [id (inc i)
+            instance (borrow-from-pool (:pool old-pool))]
+        (println "Cleaning up instance" id "of" (:size old-pool))
+        (.terminate (:scripting-container instance)))))
+  )
+

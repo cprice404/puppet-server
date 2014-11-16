@@ -27,6 +27,7 @@
           service-id        (tk-services/service-id this)
           agent-shutdown-fn (partial shutdown-on-error service-id)
           prime-pool-agent  (core/jruby-pool-agent agent-shutdown-fn)
+          flush-pool-agent  (core/jruby-pool-agent agent-shutdown-fn)
           profiler          (get-profiler)]
       (core/verify-config-found! config)
       (log/info "Initializing the JRuby service")
@@ -34,7 +35,8 @@
         (core/send-prime-pool! prime-pool-agent (:pool-state pool-context) config profiler)
         (-> context
             (assoc :pool-context pool-context)
-            (assoc :prime-pool-agent prime-pool-agent)))))
+            (assoc :prime-pool-agent prime-pool-agent)
+            (assoc :flush-pool-agent flush-pool-agent)))))
 
   (borrow-instance
     [this]
@@ -61,25 +63,8 @@
   (flush-jruby-pool!
     [this]
     (let [service-context (tk-services/service-context this)
-          config      (get-in service-context [:pool-context :config])
-          profiler    (get-in service-context [:pool-context :profiler])
-          prime-agent (get-in service-context [:prime-pool-agent])
-          pool-state  (get-in service-context [:pool-context :pool-state])
-          old-pool    @pool-state
-          new-pool    (core/create-pool-from-config config)]
-      (println "Priming new pool")
-      (core/send-prime-pool! prime-agent new-pool config profiler)
-      (println "Waiting for an instance to become available")
-      (core/with-jruby-puppet jruby-puppet (:pool @new-pool)
-                                    (println "Successfully borrowed instance from new pool"))
-      (reset! pool-state @new-pool)
-      (println "Swapped new pool into place")
-      (println "Cleaning up old pool")
-      (doseq [i (range (:size old-pool))]
-        (let [id (inc i)
-              instance (core/borrow-from-pool (:pool old-pool))]
-          (println "Cleaning up instance" id "of" (:size old-pool))
-          (.terminate (:scripting-container instance)))))))
+          {:keys [pool-context prime-pool-agent flush-pool-agent]} service-context]
+      (core/send-flush-pool! pool-context flush-pool-agent prime-pool-agent))))
 
 (defmacro with-jruby-puppet
   "Encapsulates the behavior of borrowing and returning an instance of
