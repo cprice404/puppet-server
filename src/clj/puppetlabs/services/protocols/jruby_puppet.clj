@@ -19,4 +19,8 @@
 
   (free-instance-count
     [this]
-    "The number of free JRubyPuppet instances left in the pool."))
+    "The number of free JRubyPuppet instances left in the pool.")
+
+  (flush-jruby-pool!
+    [this]
+    "Flush all the current JRuby instances and repopulate the pool."))

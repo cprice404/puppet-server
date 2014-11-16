@@ -5,7 +5,7 @@
             [puppetlabs.services.puppet-profiler.puppet-profiler-core :as profiler-core]
             [me.raynes.fs :as fs]
             [puppetlabs.services.jruby.puppet-environments :as puppet-env]
-            [puppetlabs.trapperkeeper.app :as tk-app]))
+            [puppetlabs.trapperkeeper.services :as tk-services]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants
@@ -113,3 +113,26 @@
     (-> jruby-instance
         :environment-registry
         puppet-env/mark-all-environments-expired!)))
+
+#_(defn flush-jruby-pool!
+  [service]
+  (let [service-context (tk-services/service-context service)
+        config      (get-in service-context [:pool-context :config])
+        profiler    (get-in service-context [:pool-context :profiler])
+        prime-agent (get-in service-context [:prime-pool-agent])
+        pool-state  (get-in service-context [:pool-context :pool-state])
+        old-pool    @pool-state
+        new-pool    (jruby-core/create-pool-from-config config)]
+    (println "Priming new pool")
+    (jruby-core/send-prime-pool! prime-agent new-pool config profiler)
+    (println "Waiting for an instance to become available")
+    (jruby-core/with-jruby-puppet jruby-puppet (:pool @new-pool)
+      (println "Successfully borrowed instance from new pool"))
+    (reset! pool-state @new-pool)
+    (println "Swapped new pool into place")
+    (println "Cleaning up old pool")
+    (doseq [i (range (:size old-pool))]
+      (let [id (inc i)
+            instance (jruby-core/borrow-from-pool (:pool old-pool))]
+        (println "Cleaning up instance" id "of" (:size old-pool))
+        (.terminate (:scripting-container instance))))))

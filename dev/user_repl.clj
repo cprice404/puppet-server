@@ -12,7 +12,8 @@
             [puppetlabs.trapperkeeper.app :as tka]
             [clojure.tools.namespace.repl :refer (refresh)]
             [clojure.java.io :as io]
-            [clojure.pprint :as pprint]))
+            [clojure.pprint :as pprint]
+            [puppetlabs.services.protocols.jruby-puppet :as jruby-protocol]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Configuration
@@ -120,3 +121,11 @@
   be flushed from the environment cache."
   []
   (jruby-testutils/mark-all-environments-expired! (context [:JRubyPuppetService])))
+
+(defn flush-jruby-pool!
+  "TODO"
+  []
+  #_(jruby-testutils/flush-jruby-pool!
+    (tka/get-service system :JRubyPuppetService))
+  (jruby-protocol/flush-jruby-pool!
+    (tka/get-service system :JRubyPuppetService)))
