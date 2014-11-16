@@ -5,7 +5,7 @@
             [puppetlabs.services.puppet-profiler.puppet-profiler-core :as profiler-core]
             [me.raynes.fs :as fs]
             [puppetlabs.services.jruby.puppet-environments :as puppet-env]
-            [puppetlabs.trapperkeeper.app :as tk-app]))
+            [puppetlabs.trapperkeeper.services :as tk-services]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Constants

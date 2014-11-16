@@ -2,7 +2,8 @@
   (:import (clojure.lang IFn Agent)
            (com.puppetlabs.puppetserver PuppetProfiler))
   (:require [schema.core :as schema]
-            [puppetlabs.services.jruby.jruby-puppet-core :as jruby-core]))
+            [puppetlabs.services.jruby.jruby-puppet-core :as jruby-core]
+            [clojure.tools.logging :as log]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -33,6 +34,54 @@
                     agent-ctxt)]
     (send jruby-agent agent-fn)))
 
+(schema/defn ^:always-validate
+  flush-pool!
+  "Given the current PoolContext and a reference to a new pool that is being
+  populated by the prime-pool-agent, swap the new pool into the PoolContext and
+  clean up the old pool.  NOTE: this function should never be called except by
+  the flush-pool-agent."
+  [pool-context :- jruby-core/PoolContext
+   new-pool :- jruby-core/PoolState]
+  (let [pool-state (:pool-state pool-context)
+        old-pool    @pool-state]
+    (log/info "Waiting for new JRuby pool to become ready for use.")
+    (jruby-core/with-jruby-puppet jruby-puppet (:pool new-pool)
+      (log/info "New JRuby pool is ready for use."))
+    (reset! pool-state new-pool)
+    (log/info "Swapped JRuby pools, beginning cleanup of old pool.")
+    (doseq [i (range (:size old-pool))]
+      (let [id (inc i)
+            instance (jruby-core/borrow-from-pool (:pool old-pool))]
+        (.terminate (:scripting-container instance))
+        (log/info "Cleaned up old JRuby instance" id "of" (:size old-pool))))))
+
+(schema/defn ^:always-validate
+  initiate-flush-pool! :- JRubyPoolAgent
+  "Initiate a flush of the current JRuby pool.  NOTE: this function should never
+  be called except by the flush-pool-agent."
+  [pool-context :- jruby-core/PoolContext
+   flush-agent :- JRubyPoolAgent
+   prime-agent :- JRubyPoolAgent]
+  ;; Since this function is only called by the flush-pool-agent, and since this
+  ;; is the only entry point into the pool flushing code that is exposed by the
+  ;; service API, we know that if we receive multiple flush requests before the
+  ;; first one finishes, they will be queued up and the body of this function
+  ;; will be executed atomically; we don't need to worry about race conditions
+  ;; between the steps we perform here in the body.
+  (log/info "Flush request received; creating new JRuby pool.")
+  (let [{:keys [config profiler]} pool-context
+        new-pool    (jruby-core/create-pool-from-config config)]
+    ;; Tell the prime-pool-agent to start priming the new pool
+    (send-agent prime-agent #(jruby-core/prime-pool! new-pool config profiler))
+    ;; Tell the flush-pool-agent (which is the agent that is currently executing
+    ;; this function) that it should swap in the new pool and flush the old one
+    ;; as soon as everything is ready.  Because agents are guaranteed to
+    ;; execute their actions in the order that they are 'sent', we know that
+    ;; even if multiple flushes are queued up, the final action that the agent
+    ;; will perform is this `flush-pool!` operation for the most recent flush
+    ;; request.
+    (send-agent flush-agent #(flush-pool! pool-context @new-pool))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
 
@@ -46,8 +95,15 @@
 (schema/defn ^:always-validate
   send-prime-pool! :- JRubyPoolAgent
   "Sends a request to the agent to prime the pool using the given pool context."
-  [prime-pool-agent :- JRubyPoolAgent
-   pool-state :- jruby-core/PoolStateContainer
-   config :- jruby-core/JRubyPuppetConfig
-   profiler :- (schema/maybe PuppetProfiler)]
-  (send-agent prime-pool-agent #(jruby-core/prime-pool! pool-state config profiler)))
+  [pool-context :- jruby-core/PoolContext
+   prime-pool-agent :- JRubyPoolAgent]
+  (let [{:keys [pool-state config profiler]} pool-context]
+    (send-agent prime-pool-agent #(jruby-core/prime-pool! pool-state config profiler))))
+
+(schema/defn ^:always-validate
+  send-flush-pool! :- JRubyPoolAgent
+  "Sends requests to the agent to flush the existing pool and create a new one."
+  [pool-context :- jruby-core/PoolContext
+   flush-agent :- JRubyPoolAgent
+   prime-agent :- JRubyPoolAgent]
+  (send-agent flush-agent #(initiate-flush-pool! pool-context flush-agent prime-agent)))
