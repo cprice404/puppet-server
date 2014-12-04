@@ -4,6 +4,8 @@ require 'puppet/network/http'
 require 'puppet/network/http/api/v1'
 require 'puppet/network/http/api/v2'
 
+require 'puppet/application/master'
+
 require 'puppet/server/config'
 require 'puppet/server/puppet_config'
 require 'puppet/server/network/http/handler'
