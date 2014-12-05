@@ -83,6 +83,7 @@
    :size         schema/Int
    :initialized? schema/Bool})
 
+xxx
 (def PoolStateContainer
   "An atom containing the current state of all of the JRubyPuppet pool."
   (schema/pred #(and (instance? Atom %)
@@ -146,8 +147,8 @@
     (.runScriptlet "require 'puppet/server/master'")))
 
 (schema/defn ^:always-validate
-  create-pool-instance :- JRubyPuppetInstance
-  "Creates a new pool instance."
+  create-pool-instance! :- JRubyPuppetInstance
+  "Creates a new JRubyPuppet instance and adds it to the pool."
   [pool     :- pool-queue-type
    id       :- schema/Int
    config   :- JRubyPuppetConfig
@@ -174,17 +175,19 @@
       (.put puppet-server-config "profiler" profiler)
       (.put puppet-server-config "environment_registry" env-registry)
 
-      (map->JRubyPuppetInstance
-        {:pool                 pool
-         :id                   id
-         :jruby-puppet         (.callMethod scripting-container
-                                            ruby-puppet-class
-                                            "new"
-                                            (into-array Object
-                                                        [puppet-config puppet-server-config])
-                                            JRubyPuppet)
-         :scripting-container  scripting-container
-         :environment-registry env-registry}))))
+      (let [instance (map->JRubyPuppetInstance
+                       {:pool                 pool
+                        :id                   id
+                        :jruby-puppet         (.callMethod scripting-container
+                                                           ruby-puppet-class
+                                                           "new"
+                                                           (into-array Object
+                                                                       [puppet-config puppet-server-config])
+                                                           JRubyPuppet)
+                        :scripting-container  scripting-container
+                        :environment-registry env-registry})]
+        (.put pool instance)
+        instance))))
 
 (schema/defn ^:always-validate
   get-pool-state :- PoolState
@@ -264,7 +267,7 @@
         (dotimes [i count]
           (let [id (inc i)]
             (log/debugf "Priming JRubyPuppet instance %d of %d" id count)
-            (.put pool (create-pool-instance pool id config profiler))
+            (create-pool-instance! pool id config profiler)
             (log/infof "Finished creating JRubyPuppet instance %d of %d"
                        id count))
           (mark-as-initialized! pool-state)))
