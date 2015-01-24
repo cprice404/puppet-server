@@ -54,6 +54,11 @@
     [this jruby-instance]
     (core/return-to-pool jruby-instance))
 
+  (pool-size
+    [this]
+    (let [pool-context (:pool-context (tk-services/service-context this))]
+      (:size @(:pool-state pool-context))))
+
   (free-instance-count
     [this]
     (let [pool-context (:pool-context (tk-services/service-context this))

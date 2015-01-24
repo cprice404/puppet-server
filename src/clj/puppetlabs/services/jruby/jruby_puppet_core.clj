@@ -71,6 +71,10 @@
         will be pooled. If not specified, the system's
         number of CPUs+2 will be used.
 
+    * :max-requests-per-instance - The (approximate) maximum number of HTTP
+        requests that should be handled by a given JRuby instance before it is
+        flushed and replaced with a clean instance.  TODO: defaults, zero
+
     * :http-client-ssl-protocols - A list of legal SSL protocols that may be used
         when https client requests are made.
 
@@ -81,6 +85,7 @@
    (schema/optional-key :master-conf-dir)           schema/Str
    (schema/optional-key :master-var-dir)            schema/Str
    (schema/optional-key :max-active-instances)      schema/Int
+   (schema/optional-key :max-requests-per-instance) schema/Int
    (schema/optional-key :http-client-ssl-protocols) [schema/Str]
    (schema/optional-key :http-client-cipher-suites) [schema/Str]})
 
@@ -242,7 +247,7 @@
 
 (schema/defn ^:always-validate
   create-pool-from-config :- PoolState
-  "Create a new PoolData based on the config input."
+  "Create a new PoolState based on the config input."
   [{size :max-active-instances} :- JRubyPuppetConfig]
   (let [size (or size default-pool-size)]
     {:pool         (instantiate-free-pool size)

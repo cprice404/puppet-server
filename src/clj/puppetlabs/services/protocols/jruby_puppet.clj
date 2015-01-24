@@ -17,6 +17,10 @@
     [this jrubypuppet-instance]
     "Returns the JRubyPuppet interpreter back to the pool.")
 
+  (pool-size
+    [this]
+    "The size of the pool (i.e., the total number of JRubyPuppet instances).")
+
   (free-instance-count
     [this]
     "The number of free JRubyPuppet instances left in the pool.")

@@ -31,12 +31,18 @@
 (defn config->request-handler-settings
   "Given an entire Puppet Server configuration map, return only those keys
   which are required by the request handler service."
-  [{:keys [puppet-server master]}]
-  {:allow-header-cert-info   (true? (:allow-header-cert-info master))
-   :ssl-client-verify-header (unmunge-http-header-name
-                               (:ssl-client-verify-header puppet-server))
-   :ssl-client-header        (unmunge-http-header-name
-                               (:ssl-client-header puppet-server))})
+  [{:keys [puppet-server master jruby-puppet]} pool-size]
+  {:allow-header-cert-info    (true? (:allow-header-cert-info master))
+   :ssl-client-verify-header  (unmunge-http-header-name
+                                (:ssl-client-verify-header puppet-server))
+   :ssl-client-header         (unmunge-http-header-name
+                                (:ssl-client-header puppet-server))
+   ;; In the current FIFO implementation, it's easier to keep a count of
+   ;; the total number of requests than to track it per-jruby-instance.
+   ;; So, we multiply the max-requests-per-instance by the total number of
+   ;; instances.
+   :max-requests-before-flush (* (:max-requests-per-instance jruby-puppet)
+                                 pool-size)})
 
 (defn get-cert-common-name
   "Given a request, return the Common Name from the client certificate subject."
