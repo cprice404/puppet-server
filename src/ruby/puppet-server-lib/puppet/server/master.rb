@@ -64,6 +64,10 @@ class Puppet::Server::Master
     Puppet.version
   end
 
+  def cleanUp()
+
+  end
+
   def run_mode()
     Puppet.run_mode.name.to_s
   end

@@ -320,3 +320,11 @@
   "Return a borrowed pool instance to its free pool."
   [instance :- JRubyPuppetInstanceOrRetry]
   (.put (:pool instance) instance))
+
+(schema/defn ^:always-validate
+  cleanup-jruby-instance
+  "Given a jruby instance, perform any relevant cleanup and terminate it."
+  [instance :- (schema/pred jruby-puppet-instance?)]
+  (.cleanUp (:jruby-puppet instance))
+  (.terminate (:scripting-container instance)))
+
