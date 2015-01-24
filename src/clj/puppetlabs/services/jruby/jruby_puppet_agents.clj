@@ -83,7 +83,7 @@
       (let [id (inc i)
             instance (jruby-core/borrow-from-pool (:pool old-pool))]
         (try
-          (.terminate (:scripting-container instance))
+          (jruby-core/cleanup-jruby-instance instance)
           (log/infof "Cleaned up old JRuby instance %s of %s, creating replacement."
                      id count)
           (jruby-core/create-pool-instance! new-pool id config profiler)
