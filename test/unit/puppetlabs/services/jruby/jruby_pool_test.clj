@@ -92,7 +92,8 @@
   (let [pool-size 2
         config        (jruby-testutils/jruby-puppet-config pool-size)
         profiler      jruby-testutils/default-profiler
-        pool-context  (create-pool-context config profiler)
+        pool-context  (create-pool-context config profiler
+                                           (jruby-agents ))
         pool          (get-pool pool-context)
         err-msg       (re-pattern "Unable to borrow JRuby instance from pool")]
     (with-redefs [core/create-pool-instance! (fn [_] (throw (IllegalStateException. "BORK!")))]

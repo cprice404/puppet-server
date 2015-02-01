@@ -325,10 +325,10 @@
   create-pool-context :- PoolContext
   "Creates a new JRubyPuppet pool context with an empty pool. Once the JRubyPuppet
   pool object has been created, it will need to be filled using `prime-pool!`."
-  [config profiler pool-agent]
+  [config profiler shutdown-fn]
   {:config     config
    :profiler   profiler
-   :pool-agent pool-agent
+   :pool-agent (jruby-agents/) pool-agent
    :pool-state (atom (create-pool-from-config config))})
 
 (schema/defn ^:always-validate

@@ -23,11 +23,10 @@
     (let [config            (core/initialize-config (get-config))
           service-id        (tk-services/service-id this)
           agent-shutdown-fn (partial shutdown-on-error service-id)
-          pool-agent        (jruby-agents/pool-agent agent-shutdown-fn)
           profiler          (get-profiler)]
       (core/verify-config-found! config)
       (log/info "Initializing the JRuby service")
-      (let [pool-context (core/create-pool-context config profiler pool-agent)]
+      (let [pool-context (core/create-pool-context config profiler shutdown-fn)]
         (jruby-agents/send-prime-pool! pool-context)
         (-> context
             (assoc :pool-context pool-context)))))
