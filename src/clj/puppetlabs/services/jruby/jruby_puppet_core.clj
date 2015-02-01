@@ -3,7 +3,7 @@
            (java.util HashMap)
            (org.jruby RubyInstanceConfig$CompileMode CompatVersion)
            (org.jruby.embed ScriptingContainer LocalContextScope)
-           (clojure.lang Atom)
+           (clojure.lang Atom Agent)
            (com.puppetlabs.puppetserver PuppetProfiler JRubyPuppet
                                         EnvironmentRegistry))
   (:require [clojure.tools.logging :as log]
@@ -85,6 +85,16 @@
    :max-active-instances        schema/Int
    :max-requests-per-instance   schema/Int})
 
+(def JRubyPoolAgent
+  "An agent configured for use in managing JRuby pools"
+  (schema/both Agent
+               (schema/pred
+                 (fn [a]
+                   (let [state @a]
+                     (and
+                       (map? state)
+                       (ifn? (:shutdown-on-error state))))))))
+
 (def PoolState
   "A map that describes all attributes of a particular JRubyPuppet pool."
   {:pool         pool-queue-type
@@ -100,7 +110,8 @@
   "The data structure that stores all JRubyPuppet pools and the original configuration."
   {:config     JRubyPuppetConfig
    :profiler   (schema/maybe PuppetProfiler)
-   :pool-state PoolStateContainer})
+   :pool-state PoolStateContainer
+   :pool-agent JRubyPoolAgent})
 
 (def JRubyInstanceState
   "State metadata for an individual JRubyPuppet instance"
@@ -314,9 +325,10 @@
   create-pool-context :- PoolContext
   "Creates a new JRubyPuppet pool context with an empty pool. Once the JRubyPuppet
   pool object has been created, it will need to be filled using `prime-pool!`."
-  [config profiler]
+  [config profiler pool-agent]
   {:config     config
    :profiler   profiler
+   :pool-agent pool-agent
    :pool-state (atom (create-pool-from-config config))})
 
 (schema/defn ^:always-validate
