@@ -24,7 +24,6 @@
     (let [config            (core/initialize-config (get-config))
           service-id        (tk-services/service-id this)
           agent-shutdown-fn (partial shutdown-on-error service-id)
-          pool-agent        (jruby-agents/pool-agent agent-shutdown-fn)
           profiler          (get-profiler)]
       (core/verify-config-found! config)
       (log/info "Initializing the JRuby service")
@@ -32,15 +31,13 @@
         (jruby-agents/send-prime-pool! pool-context)
         (-> context
             (assoc :pool-context pool-context)
-            (assoc :pool-agent pool-agent)
             (assoc :borrow-timeout (:borrow-timeout config))))))
 
   (borrow-instance
     [this]
-    (let [pool-context   (:pool-context (tk-services/service-context this))
-          pool           (core/get-pool pool-context)
+    (let [pool-context (:pool-context (tk-services/service-context this))
           borrow-timeout (:borrow-timeout (tk-services/service-context this))]
-      (core/borrow-from-pool-with-timeout pool borrow-timeout)))
+      (core/borrow-from-pool-with-timeout pool-context borrow-timeout)))
 
   (return-instance
     [this jruby-instance]
