@@ -48,11 +48,10 @@
        :jruby-puppet {:max-active-instances 4}}
       (let [jruby-service (tk-app/get-service app :JRubyPuppetService)
             context (tk-services/service-context jruby-service)
-            pool-context (:pool-context context)
-            pool (jruby-core/get-pool pool-context)]
-        (jruby-testutils/reduce-over-jrubies! pool 4 #(format "InstanceID = %s" %))
+            pool-context (:pool-context context)]
+        (jruby-testutils/reduce-over-jrubies! pool-context 4 #(format "InstanceID = %s" %))
         (is (= #{0 1 2 3}
-               (-> (jruby-testutils/reduce-over-jrubies! pool 4 (constantly "InstanceID"))
+               (-> (jruby-testutils/reduce-over-jrubies! pool-context 4 (constantly "InstanceID"))
                    set)))
         (let [response (http-client/delete
                          "https://localhost:8140/puppet-admin-api/v1/jruby-pool"

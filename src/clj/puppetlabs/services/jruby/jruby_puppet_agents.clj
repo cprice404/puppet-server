@@ -82,7 +82,7 @@
     (doseq [i (range count)]
       (try
         (let [id        (inc i)
-              instance  (jruby-core/borrow-from-pool (:pool old-pool))]
+              instance  (jruby-core/borrow-from-pool (:pool old-pool) pool-context)]
           (flush-instance! instance new-pool id config profiler)
           (log/infof "Finished creating JRubyPuppet instance %d of %d"
                      id count))
@@ -116,3 +116,5 @@
   "Sends requests to the agent to flush the existing pool and create a new one."
   [{:keys [pool-agent] :as pool-context} :- jruby-core/PoolContext]
   (send-agent pool-agent #(flush-pool! pool-context)))
+
+

@@ -97,8 +97,8 @@
 
 (def PoolState
   "A map that describes all attributes of a particular JRubyPuppet pool."
-  {:pool         pool-queue-type
-   :size         schema/Int})
+  {:pool                      pool-queue-type
+   :size                      schema/Int})
 
 (def PoolStateContainer
   "An atom containing the current state of all of the JRubyPuppet pool."
@@ -110,8 +110,9 @@
   "The data structure that stores all JRubyPuppet pools and the original configuration."
   {:config     JRubyPuppetConfig
    :profiler   (schema/maybe PuppetProfiler)
-   :pool-state PoolStateContainer
-   :pool-agent JRubyPoolAgent})
+   :pool-agent JRubyPoolAgent
+   :flush-instance-agent JRubyPoolAgent
+   :pool-state PoolStateContainer})
 
 (def JRubyInstanceState
   "State metadata for an individual JRubyPuppet instance"
@@ -283,8 +284,10 @@
   Returns nil if the borrow function returns nil; throws an exception if
   the borrow function's return value indicates an error condition."
   [borrow-fn :- (schema/pred ifn?)
-   pool :- pool-queue-type]
-  (let [instance (borrow-fn pool)]
+   pool :- pool-queue-type
+   pool-context :- PoolContext]
+  (let [instance (borrow-fn pool)
+        max-requests (get-in pool-context [:config :max-requests-per-instance])]
     (cond (instance? PoisonPill instance)
           (do
             (.putFirst pool instance)
@@ -294,8 +297,16 @@
 
           (jruby-puppet-instance? instance)
           (do
-            (swap! (:state instance) (fn [m] (update-in m [:request-count] inc)))
-            instance)
+            (let [state     (swap! (:state instance)
+                                   update-in [:request-count] inc)
+                  req-count (:request-count state)]
+              (if (and (pos? max-requests)
+                       (> req-count max-requests))
+                (do
+                  ;(flush-instance! instance)
+                  ;
+                  (borrow-from-pool!* borrow-fn pool))
+                instance)))
 
           ((some-fn nil? retry-poison-pill?) instance)
           instance
@@ -329,6 +340,8 @@
   {:config     config
    :profiler   profiler
    :pool-agent (jruby-agents/) pool-agent
+   :pool-agent pool-agent
+   :flush-instance-agent flush-instance-agent
    :pool-state (atom (create-pool-from-config config))})
 
 (schema/defn ^:always-validate
@@ -356,9 +369,15 @@
   borrow-from-pool :- JRubyPuppetInstanceOrRetry
   "Borrows a JRubyPuppet interpreter from the pool. If there are no instances
   left in the pool then this function will block until there is one available."
-  [pool :- pool-queue-type]
+  [pool :- pool-queue-type
+   pool-context :- PoolContext]
+  ;; it looks unusual that we accept both the pool and the pool-context
+  ;; as arguments, since the PoolContext contains a reference to a pool.  However,
+  ;; in cases such as a full pool flush operation, there may be two distinct
+  ;; pools in play, and the one in the pool-context may be different from the
+  ;; one we're borrowing from.
   (let [borrow-fn #(.takeFirst %)]
-    (borrow-from-pool!* borrow-fn pool)))
+    (borrow-from-pool!* borrow-fn pool pool-context)))
 
 (schema/defn ^:always-validate
   borrow-from-pool-with-timeout :- (schema/maybe JRubyPuppetInstanceOrRetry)
@@ -369,10 +388,16 @@
   timeout. If the timeout runs out then nil will be returned, indicating that
   there were no instances available."
   [pool :- pool-queue-type
+   pool-context :- PoolContext
    timeout :- schema/Int]
+  ;; it looks unusual that we accept both the pool and the pool-context
+  ;; as arguments, since the PoolContext contains a reference to a pool.  However,
+  ;; in cases such as a full pool flush operation, there may be two distinct
+  ;; pools in play, and the one in the pool-context may be different from the
+  ;; one we're borrowing from.
   {:pre  [(>= timeout 0)]}
   (let [borrow-fn #(.pollFirst % timeout TimeUnit/MILLISECONDS)]
-    (borrow-from-pool!* borrow-fn pool)))
+    (borrow-from-pool!* borrow-fn pool pool-context)))
 
 (schema/defn ^:always-validate
   return-to-pool

@@ -26,11 +26,10 @@
             (jruby-testutils/jruby-puppet-config 4)))
       (let [jruby-service (tk-app/get-service app :JRubyPuppetService)
             context (tk-services/service-context jruby-service)
-            pool-context (:pool-context context)
-            pool (jruby-core/get-pool pool-context)]
-        (jruby-testutils/reduce-over-jrubies! pool 4 #(format "InstanceID = %s" %))
+            pool-context (:pool-context context)]
+        (jruby-testutils/reduce-over-jrubies! pool-context 4 #(format "InstanceID = %s" %))
         (is (= #{0 1 2 3}
-               (-> (jruby-testutils/reduce-over-jrubies! pool 4 (constantly "InstanceID"))
+               (-> (jruby-testutils/reduce-over-jrubies! pool-context 4 (constantly "InstanceID"))
                    set)))
         (jruby-protocol/flush-jruby-pool! jruby-service)
         ; wait until the flush is complete
@@ -67,8 +66,8 @@
         ; wait until we know the new pool has been swapped in
         @pool-state-swapped
         ; wait until the flush is complete
-        (await (:pool-agent context))
-        (let [old-pool-instance (jruby-core/borrow-from-pool old-pool)]
+        (await (:pool-agent pool-context))
+        (let [old-pool-instance (jruby-core/borrow-from-pool old-pool pool-context)]
           (is (jruby-core/retry-poison-pill? old-pool-instance)))))))
 
 (deftest with-jruby-retry-test-via-mock-get-pool

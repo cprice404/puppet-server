@@ -102,8 +102,11 @@
 
 (defn drain-pool
   "Drains the JRubyPuppet pool and returns each instance in a vector."
-  [pool size]
-  (mapv (fn [_] (jruby-core/borrow-from-pool pool)) (range size)))
+  [pool-context size]
+  (mapv (fn [_] (jruby-core/borrow-from-pool
+                  (jruby-core/get-pool pool-context)
+                  pool-context))
+        (range size)))
 
 (defn fill-drained-pool
   "Returns a list of JRubyPuppet instances back to their pool."
@@ -119,8 +122,8 @@
 
   Returns a vector containing the results of executing the scripts against the
   JRuby instances."
-  [pool size f]
-  (let [jrubies (drain-pool pool size)
+  [pool-context size f]
+  (let [jrubies (drain-pool pool-context size)
         result  (reduce
                   (fn [acc jruby-offset]
                     (let [sc (:scripting-container (nth jrubies jruby-offset))

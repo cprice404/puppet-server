@@ -46,7 +46,7 @@
 
     (testing "Borrowing all instances from a pool while it is being primed and
              returning them."
-      (let [all-the-jrubys (jruby-testutils/drain-pool pool pool-size)]
+      (let [all-the-jrubys (jruby-testutils/drain-pool pool-context pool-size)]
         (is (= 0 (free-instance-count pool)))
         (doseq [instance all-the-jrubys]
           (is (not (nil? instance)) "One of JRubyPuppet instances is nil"))
@@ -56,7 +56,7 @@
     (testing "Borrowing from an empty pool with a timeout returns nil within the
              proper amount of time."
       (let [timeout              250
-            all-the-jrubys       (jruby-testutils/drain-pool pool pool-size)
+            all-the-jrubys       (jruby-testutils/drain-pool pool-context pool-size)
             test-start-in-millis (System/currentTimeMillis)]
         (is (nil? (borrow-from-pool-with-timeout pool timeout)))
         (is (>= (- (System/currentTimeMillis) test-start-in-millis) timeout)
@@ -97,19 +97,55 @@
         pool          (get-pool pool-context)
         err-msg       (re-pattern "Unable to borrow JRuby instance from pool")]
     (with-redefs [core/create-pool-instance! (fn [_] (throw (IllegalStateException. "BORK!")))]
-                 (is (thrown? IllegalStateException (jruby-agents/prime-pool! (:pool-state pool-context) config profiler))))
+                 (is (thrown? IllegalStateException
+                              (jruby-agents/prime-pool!
+                                (:pool-state pool-context)
+                                config
+                                profiler))))
     (testing "borrow and borrow-with-timeout both throw an exception if the pool failed to initialize"
       (is (thrown-with-msg? IllegalStateException
             err-msg
-            (borrow-from-pool pool)))
+            (borrow-from-pool pool pool-context)))
       (is (thrown-with-msg? IllegalStateException
             err-msg
-            (borrow-from-pool-with-timeout pool 120))))
+            (borrow-from-pool-with-timeout pool pool-context 120))))
     (testing "borrow and borrow-with-timeout both continue to throw exceptions on subsequent calls"
       (is (thrown-with-msg? IllegalStateException
           err-msg
-          (borrow-from-pool pool)))
+          (borrow-from-pool pool pool-context)))
       (is (thrown-with-msg? IllegalStateException
           err-msg
-          (borrow-from-pool-with-timeout pool 120))))))
+          (borrow-from-pool-with-timeout pool pool-context 120))))))
+
+(defn create-pool
+  [max-requests]
+  (let [config (-> (jruby-testutils/jruby-puppet-config 1)
+                   (assoc :max-requests-per-instance max-requests))
+        profiler jruby-testutils/default-profiler
+        pool-context (create-pool-context config profiler)]
+    (jruby-agents/prime-pool! (:pool-state pool-context) config profiler)
+    (get-pool pool-context)))
+
+(deftest flush-jruby-after-max-requests
+  (testing "JRuby instance is not flushed if it has not exceeded max requests"
+    (let [pool      (create-pool 2)
+          instance  (borrow-from-pool pool)
+          id        (:id instance)]
+      (return-to-pool instance)
+      (let [instance (borrow-from-pool pool)]
+        (is (= id (:id instance))))))
+  (testing "JRuby instance is flushed after exceeding max requests"
+    (let [pool      (create-pool 1)
+          instance  (borrow-from-pool pool)
+          id        (:id instance)]
+      (return-to-pool instance)
+      (let [instance (borrow-from-pool pool)]
+        (is (not= id (:id instance))))))
+  (testing "JRuby instance is not flushed if max requests setting is set to 0"
+    (let [pool      (create-pool 0)
+          instance  (borrow-from-pool pool)
+          id        (:id instance)]
+      (return-to-pool instance)
+      (let [instance (borrow-from-pool pool)]
+        (is (= id (:id instance)))))))
 
