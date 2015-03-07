@@ -13,7 +13,9 @@
 (defproject puppetlabs/puppet-server ps-version
   :description "Puppet Server"
 
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
+                 [org.clojure/data.json "0.2.3"]
+                 [commons-codec "1.9"]
                  [puppetlabs/trapperkeeper ~tk-version]
                  [puppetlabs/kitchensink ~ks-version]
                  [puppetlabs/certificate-authority "0.6.0"]
@@ -27,7 +29,8 @@
                  [com.github.jnr/jffi "1.2.7" :classifier "native"]
                  [com.github.jnr/jnr-x86asm "1.0.2"]
                  [clj-time "0.5.1" :exclusions [joda-time]]
-                 [compojure "1.1.8" :exclusions [org.clojure/tools.macro]]
+                 ;[compojure "1.1.8" :exclusions [org.clojure/tools.macro]]
+                 [bidi "1.18.7"]
                  [liberator "0.12.0"]
                  [me.raynes/fs "1.4.5"]
                  [prismatic/schema "0.2.2"]

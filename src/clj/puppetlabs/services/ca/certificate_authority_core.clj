@@ -4,16 +4,17 @@
             [puppetlabs.certificate-authority.core :as ca-utils]
             [puppetlabs.puppetserver.ringutils :as ringutils]
             [puppetlabs.puppetserver.liberator-utils :as utils]
+            [puppetlabs.bidi :as pl-bidi :refer [GET ANY PUT]]
             [slingshot.slingshot :as sling]
             [clojure.tools.logging :as log]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [schema.core :as schema]
             [cheshire.core :as cheshire]
-            [compojure.core :as compojure :refer [GET ANY PUT]]
+    ;[compojure.core :as compojure :refer [GET ANY PUT]]
             [liberator.core :refer [defresource]]
             [liberator.representation :as representation]
-            [liberator.dev :as liberator-dev]
+            ;[liberator.dev :as liberator-dev]
             [ring.util.response :as rr]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -239,21 +240,41 @@
 
 (schema/defn routes
   [ca-settings :- ca/CaSettings]
-  (compojure/context "/:environment" [environment]
-    (compojure/routes
-      (ANY "/certificate_status/:subject" [subject]
-        (certificate-status subject ca-settings))
-      (ANY "/certificate_statuses/:ignored-but-required" [do-not-use]
-        (certificate-statuses ca-settings)))
-      (GET "/certificate/:subject" [subject]
-        (handle-get-certificate subject ca-settings))
-      (compojure/context "/certificate_request/:subject" [subject]
-        (GET "/" []
-          (handle-get-certificate-request subject ca-settings))
-        (PUT "/" {body :body}
-          (handle-put-certificate-request! subject body ca-settings)))
-      (GET "/certificate_revocation_list/:ignored-node-name" []
-        (handle-get-certificate-revocation-list ca-settings))))
+  #_(compojure/context "/:environment" [environment]
+                     (compojure/routes
+                       (ANY "/certificate_status/:subject" [subject]
+                            (certificate-status subject ca-settings))
+                       (ANY "/certificate_statuses/:ignored-but-required" [do-not-use]
+                            (certificate-statuses ca-settings)))
+                     (GET "/certificate/:subject" [subject]
+                          (handle-get-certificate subject ca-settings))
+                     (compojure/context "/certificate_request/:subject" [subject]
+                                        (GET "/" []
+                                             (handle-get-certificate-request subject ca-settings))
+                                        (PUT "/" {body :body}
+                                             (handle-put-certificate-request! subject body ca-settings)))
+                     (GET "/certificate_revocation_list/:ignored-node-name" []
+                          (handle-get-certificate-revocation-list ca-settings)))
+  (pl-bidi/context ["/" :environment]
+    (ANY ["/certificate_status/" :subject]
+         (fn [{{:keys [subject]} :route-params :as req}]
+           ((certificate-status subject ca-settings) req)))
+    (ANY ["/certificate_statuses/" :ignored-but-required]
+         (fn [req]
+           ((certificate-statuses ca-settings) req)))
+    (GET ["/certificate/" :subject]
+         (fn [{{:keys [subject]} :route-params :as req}]
+           (handle-get-certificate subject ca-settings)))
+    (pl-bidi/context ["/certificate_request/" :subject]
+      (GET "/"
+           (fn [{{:keys [subject]} :route-params :as req}]
+             (handle-get-certificate-request subject ca-settings)))
+      (PUT "/"
+           (fn [{{:keys [subject]} :route-params :keys [body] :as req}]
+             (handle-put-certificate-request! subject body ca-settings))))
+    (GET ["/certificate_revocation_list/" :ignored-node-name]
+         (fn [req]
+           (handle-get-certificate-revocation-list ca-settings)))))
 
 (defn wrap-with-puppet-version-header
   "Function that returns a middleware that adds an
@@ -272,5 +293,6 @@
    puppet-version :- schema/Str]
   (-> (routes ca-settings)
       ;(liberator-dev/wrap-trace :header)           ; very useful for debugging!
+      (pl-bidi/routes->handler)
       (wrap-with-puppet-version-header puppet-version)
       (ringutils/wrap-response-logging)))
