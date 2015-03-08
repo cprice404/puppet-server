@@ -90,7 +90,7 @@
   [jruby-service]
   (pl-bidi/routes
     (pl-bidi/context "/v1" (v1-routes jruby-service))
-    #_(pl-bidi/not-found "Not Found")))
+    (pl-bidi/not-found "Not Found")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
