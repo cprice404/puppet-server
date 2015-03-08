@@ -1,7 +1,46 @@
 (ns puppetlabs.bidi
   (:require [bidi.ring :as bidi-ring]
             [clojure.zip :as zip]
-            [clojure.pprint :as pprint]))
+            [clojure.tools.logging :as log]))
+
+(defn- assoc-&-binding [binds req sym]
+  (assoc binds sym `(dissoc (:params ~req)
+                            ~@(map keyword (keys binds))
+                            ~@(map str (keys binds)))))
+
+(defn- assoc-symbol-binding [binds req sym]
+  (assoc binds sym `(get-in ~req [:params ~(keyword sym)]
+                            (get-in ~req [:params ~(str sym)]))))
+
+(defn- vector-bindings [args req]
+  (loop [args args, binds {}]
+    (if-let [sym (first args)]
+      (cond
+        (= '& sym)
+        (recur (nnext args) (assoc-&-binding binds req (second args)))
+        (= :as sym)
+        (recur (nnext args) (assoc binds (second args) req))
+        (symbol? sym)
+        (recur (next args) (assoc-symbol-binding binds req sym))
+        :else
+        (throw (Exception. (str "Unexpected binding: " sym))))
+      (mapcat identity binds))))
+
+(defn- warn-on-*-bindings! [bindings]
+  (when (and (vector? bindings) (contains? (set bindings) '*))
+    (binding [*out* *err*]
+      (log/warn "WARNING: * should not be used as a route binding."))))
+
+(defmacro ^:no-doc let-request [[bindings request] & body]
+  (warn-on-*-bindings! bindings)
+  (if (vector? bindings)
+    `(let [~@(vector-bindings bindings request)] ~@body)
+    `(let [~bindings ~request] ~@body)))
+
+(defmacro handler-fn
+  [bindings body]
+  `(fn [request#]
+     (let-request [~bindings request#] ~@body)))
 
 (defn update-route-info
   [route-info pattern]
@@ -65,14 +104,14 @@
 
 (def context-handler (comp context->handler context))
 
-(defn ANY
-  [pattern handler]
-  [pattern handler])
+(defmacro ANY
+  [pattern bindings & body]
+  `[~pattern (handler-fn ~bindings ~body)])
 
-(defn GET
-  [pattern handler]
-  [pattern {:get handler}])
+(defmacro GET
+  [pattern bindings & body]
+  `[~pattern {:get (handler-fn ~bindings ~body)}])
 
-(defn PUT
-  [pattern handler]
-  [pattern {:put handler}])
+(defmacro PUT
+  [pattern bindings & body]
+  `[~pattern {:put (handler-fn ~bindings ~body)}])
