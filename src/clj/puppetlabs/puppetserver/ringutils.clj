@@ -59,7 +59,8 @@
 (defn content-type
   "Return the content-type of the request, or nil if no content-type is set."
   [request]
-  (if-let [type (get-in request [:headers "content-type"])]
+  (if-let [type (or (get-in request [:headers "content-type"])
+                    (get request :content-type))]
     (second (re-find #"^(.*?)(?:;|$)" type))))
 
 (defn urlencoded-form?
@@ -82,7 +83,11 @@
   [request encoding]
   (merge-with merge request
               (if-let [body (and (urlencoded-form? request) (:body request))]
-                (let [params (parse-params (slurp body :encoding encoding) encoding)]
+                (let [params (parse-params
+                               (if (string? body)
+                                 body
+                                 (slurp body :encoding encoding))
+                               encoding)]
                   {:form-params params, :params params})
                 {:form-params {}, :params {}})))
 

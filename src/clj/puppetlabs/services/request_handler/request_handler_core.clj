@@ -9,7 +9,8 @@
             [ring.middleware.params :as ring-params]
             [ring.util.codec :as ring-codec]
             [ring.util.response :as ring-response]
-            [slingshot.slingshot :as sling]))
+            [slingshot.slingshot :as sling]
+            [puppetlabs.puppetserver.ringutils :as ringutils]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Internal
@@ -100,13 +101,14 @@
   (let [body-for-jruby (body-for-jruby request)]
     (->
       request
-      ; Leave the slurped content under an alternate key so that it
-      ; is available to be proxied on to the JRubyPuppet request.
-      (assoc :body-for-jruby body-for-jruby)
-      ; Body content has been slurped already so wrap it in a new reader
-      ; so that a copy of it can be obtained by ring middleware functions,
-      ; if needed.
-      (assoc :body (if (string? body-for-jruby) (StringReader. body-for-jruby)))
+      ;; Leave the slurped content under an alternate key so that it
+      ;; is available to be proxied on to the JRubyPuppet request.
+      ;(assoc :body-for-jruby body-for-jruby)
+      ;; Body content has been slurped already so wrap it in a new reader
+      ;; so that a copy of it can be obtained by ring middleware functions,
+      ;; if needed.
+      ;(assoc :body (if (string? body-for-jruby) (StringReader. body-for-jruby)))
+      (assoc :body body-for-jruby)
       ; Compojure request may have destructured parameters from subportions
       ; of the URL into the params map by this point.  Clear this out
       ; before invoking the ring middleware param functions so that keys
@@ -115,7 +117,8 @@
       (assoc :params {})
       ; Defer to ring middleware to pull out parameters from the query
       ; string and/or form body.
-      ring-params/params-request)))
+      ;ring-params/params-request
+      ringutils/params-request)))
 
 (def unauthenticated-client-info
   "Return a map with default info for an unauthenticated client"
@@ -237,7 +240,7 @@
                    :params         (:params request)
                    :remote-addr    (:remote-addr request)
                    :headers        headers
-                   :body           (:body-for-jruby request)
+                   :body           (:body request)
                    :request-method (-> (:request-method request)
                                        name
                                        string/upper-case)}]

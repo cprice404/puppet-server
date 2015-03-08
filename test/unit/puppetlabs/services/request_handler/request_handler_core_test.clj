@@ -45,15 +45,15 @@
     (is (nil? (core/get-cert-common-name nil)))))
 
 (deftest wrap-params-for-jruby-test
-  #_(testing "get with no query parameters returns empty params"
+  (testing "get with no query parameters returns empty params"
     (let [wrapped-request (core/wrap-params-for-jruby
                             {:body         (StringReader. "")
                              :content-type "text/plain"})]
       (is (= {} (:params wrapped-request))
           "Unexpected params in wrapped request")
-      (is (= "" (:body-for-jruby wrapped-request))
+      (is (= "" (:body wrapped-request))
           "Unexpected body for jruby in wrapped request")))
-  #_(testing "get with query parameters returns expected values"
+  (testing "get with query parameters returns expected values"
     (let [wrapped-request (core/wrap-params-for-jruby
                             {:body         (StringReader. "")
                              :content-type "text/plain"
@@ -62,20 +62,20 @@
       (is (= {"one" "1 1", "two" "2", "arr[]" ["3", "4"]}
              (:params wrapped-request))
           "Unexpected params in wrapped request")
-      (is (= "" (:body-for-jruby wrapped-request))
+      (is (= "" (:body wrapped-request))
           "Unexpected body for jruby in wrapped request")))
   (testing "post with form parameters returns expected values"
     (let [body-string "one=1&two=2%202&arr[]=3&arr[]=4"
-          wrapped-request #spy/d (core/wrap-params-for-jruby
+          wrapped-request (core/wrap-params-for-jruby
                             {:body         (StringReader. body-string)
                              :content-type "application/x-www-form-urlencoded"
                              :params       {:bogus ""}})]
       (is (= {"one" "1", "two" "2 2", "arr[]" ["3" "4"]}
              (:params wrapped-request))
           "Unexpected params in wrapped request")
-      (is (= body-string (:body-for-jruby wrapped-request))
+      (is (= body-string (:body wrapped-request))
           "Unexpected body for jruby in wrapped request")))
-  #_(testing "post with plain text in default encoding returns expected values"
+  (testing "post with plain text in default encoding returns expected values"
     (let [body-string "some random text"
           wrapped-request (core/wrap-params-for-jruby
                             {:body         (StringReader. body-string)
@@ -83,9 +83,9 @@
                              :params       {:bogus ""}})]
       (is (= {} (:params wrapped-request))
           "Unexpected params in wrapped request")
-      (is (= body-string (:body-for-jruby wrapped-request))
+      (is (= body-string (:body wrapped-request))
           "Unexpected body for jruby in wrapped request")))
-  #_(testing "post with plain text in UTF-16 returns expected values"
+  (testing "post with plain text in UTF-16 returns expected values"
     (let [body-string-from-utf16 (String. (.getBytes
                                             "some random text from utf-16"
                                             "UTF-16"))
@@ -99,9 +99,9 @@
                              :params             {:bogus ""}})]
       (is (= {} (:params wrapped-request))
           "Unexpected params in wrapped request")
-      (is (= body-string-from-utf16 (:body-for-jruby wrapped-request))
+      (is (= body-string-from-utf16 (:body wrapped-request))
           "Unexpected body for jruby in wrapped request")))
-  #_(testing "request with binary content type does not consume body"
+  (testing "request with binary content type does not consume body"
     (let [body-string "some random text"]
       (doseq [content-type [nil "" "application/octet-stream"
                             "APPLICATION/octet-Stream"]]
@@ -109,7 +109,7 @@
               wrapped-request (core/wrap-params-for-jruby
                                 {:body         body-reader
                                  :content-type content-type})]
-          (is (identical? body-reader (:body-for-jruby wrapped-request))
+          (is (identical? body-reader (:body wrapped-request))
               "Unexpected body for jruby instance in wrapped request")
           (is (= body-string (slurp body-reader))
               "Unexpected body for jruby content in wrapped request"))))))
