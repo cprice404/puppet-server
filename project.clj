@@ -35,6 +35,8 @@
                  [com.github.jnr/jffi "1.2.7" :classifier "native"]
                  [com.github.jnr/jnr-x86asm "1.0.2"]
                  [compojure "1.3.2"]
+                 [ring/ring-core "1.3.2"]
+                 [ring/ring-codec "1.0.0"]
                  [bidi "1.18.7"]
                  [liberator "0.12.0"]
                  [me.raynes/fs "1.4.5"]
@@ -43,7 +45,6 @@
                  [commons-io "2.4"]
                  [clj-yaml "0.4.0" :exclusions [org.yaml/snakeyaml]]
                  [slingshot "0.10.3"]
-                 [ring/ring-codec "1.0.0"]
                  [cheshire "5.3.1"]
                  [trptcolin/versioneer "0.1.0"]]
 
