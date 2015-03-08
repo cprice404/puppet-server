@@ -1,9 +1,10 @@
 (ns puppetlabs.services.master.master-service
   (:require [clojure.tools.logging :as log]
-            [compojure.core :as compojure]
             [puppetlabs.trapperkeeper.core :refer [defservice]]
             [puppetlabs.services.master.master-core :as core]
-            [puppetlabs.puppetserver.certificate-authority :as ca]))
+            [puppetlabs.puppetserver.certificate-authority :as ca]
+            [compojure.core :as compojure]
+            [puppetlabs.bidi :as pl-bidi]))
 
 (defservice master-service
   [[:WebroutingService add-ring-handler get-route]
@@ -25,7 +26,9 @@
      (log/info "Master Service adding a ring handler")
      (add-ring-handler
        this
-      (compojure/context path [] (core/build-ring-handler handle-request))))
+       (pl-bidi/context-handler
+        path
+        (core/build-ring-handler handle-request))))
    context)
   (start
     [this context]

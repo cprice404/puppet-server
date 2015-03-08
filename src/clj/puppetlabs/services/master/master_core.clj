@@ -1,8 +1,8 @@
 (ns puppetlabs.services.master.master-core
   (:import (java.io FileInputStream))
-  (:require [compojure.core :as compojure]
-            [me.raynes.fs :as fs]
-            [puppetlabs.puppetserver.ringutils :as ringutils]))
+  (:require [me.raynes.fs :as fs]
+            [puppetlabs.puppetserver.ringutils :as ringutils]
+            [puppetlabs.bidi :as pl-bidi]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Routing
@@ -10,8 +10,8 @@
 (defn v2_0-routes
   "Creates the compojure routes to handle the master's '/v2.0' routes."
   [request-handler]
-  (compojure/routes
-    (compojure/GET "/environments" request
+  (pl-bidi/routes
+    (pl-bidi/GET "/environments" request
                    (request-handler request))))
 
 (defn legacy-routes
@@ -20,18 +20,18 @@
    excluding the CA-related endpoints, which are handled separately by the
    CA service."
   [request-handler]
-  (compojure/routes
-    (compojure/GET "/node/*" request
+  (pl-bidi/routes
+    (pl-bidi/GET ["/node/" :node] request
                    (request-handler request))
-    (compojure/GET "/facts/*" request
+    (pl-bidi/GET ["/facts/" :node] request
                    (request-handler request))
-    (compojure/GET "/file_content/*" request
+    (pl-bidi/GET ["/file_content/" [#".*" :rest]] request
                    (request-handler request))
-    (compojure/GET "/file_metadatas/*" request
+    (pl-bidi/GET ["/file_metadatas/" [#".*" :rest]] request
                    (request-handler request))
-    (compojure/GET "/file_metadata/*" request
+    (pl-bidi/GET ["/file_metadata/" [#".*" :rest]] request
                    (request-handler request))
-    (compojure/GET "/file_bucket_file/*" request
+    (pl-bidi/GET ["/file_bucket_file/" [#".*" :rest]] request
                    (request-handler request))
 
     ;; TODO: file_bucket_file request PUTs from Puppet agents currently use a
@@ -44,37 +44,37 @@
     ;; Content-Type to describe the input payload - see PUP-3812 for the core
     ;; Puppet work and SERVER-294 for the related Puppet Server work that
     ;; would be done.
-    (compojure/PUT "/file_bucket_file/*" request
+    (pl-bidi/PUT ["/file_bucket_file/" [#".*" :rest]] request
                    (request-handler (assoc request
                                            :content-type
                                            "application/octet-stream")))
 
-    (compojure/HEAD "/file_bucket_file/*" request
+    (pl-bidi/HEAD ["/file_bucket_file/" [#".*" :rest]] request
                    (request-handler request))
-    (compojure/GET "/catalog/*" request
+    (pl-bidi/GET ["/catalog/" [#".*" :rest]] request
                    (request-handler request))
-    (compojure/POST "/catalog/*" request
+    (pl-bidi/POST ["/catalog/" [#".*" :rest]] request
                     (request-handler request))
-    (compojure/PUT "/report/*" request
+    (pl-bidi/PUT ["/report/" [#".*" :rest]] request
                    (request-handler request))
-    (compojure/GET "/resource_type/*" request
+    (pl-bidi/GET ["/resource_type/" [#".*" :rest]] request
                    (request-handler request))
-    (compojure/GET "/resource_types/*" request
+    (pl-bidi/GET ["/resource_types/" [#".*" :rest]] request
                    (request-handler request))
 
     ;; TODO: when we get rid of the legacy dashboard after 3.4, we should remove
     ;; this endpoint as well.  It makes more sense for this type of query to be
     ;; directed to PuppetDB.
-    (compojure/GET "/facts_search/*" request
+    (pl-bidi/GET ["/facts_search/" [#".*" :rest]] request
                    (request-handler request))))
 
 (defn root-routes
   "Creates all of the compojure routes for the master."
   [request-handler]
-  (compojure/routes
-    (compojure/context "/v2.0" request
+  (pl-bidi/routes
+    (pl-bidi/context "/v2.0"
                        (v2_0-routes request-handler))
-    (compojure/context "/:environment" [environment]
+    (pl-bidi/context "/:environment"
                        (legacy-routes request-handler))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

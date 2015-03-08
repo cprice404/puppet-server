@@ -4,8 +4,6 @@
             [puppetlabs.services.protocols.jruby-puppet :as jruby-puppet]
             [puppetlabs.puppetserver.liberator-utils :as liberator-utils]
             [schema.core :as schema]
-            [compojure.core :as compojure]
-            [compojure.route :as route]
             [liberator.core :refer [defresource]]
             [liberator.dev :as liberator-dev]))
 

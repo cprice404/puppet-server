@@ -62,6 +62,10 @@
 
 
 
+(defn routes
+  [& routes]
+  (vec routes))
+
 (defn context->handler
   [context]
   (with-meta
@@ -71,16 +75,31 @@
 (defn context [url-prefix & routes]
   [url-prefix (vec routes)])
 
-(def context-handler (comp context->handler context))
+(defn context-handler
+  [url-prefix & routes]
+  (context->handler
+    (apply context url-prefix routes)))
 
 (defmacro ANY
   [pattern bindings & body]
   `[~pattern (handler-fn ~bindings ~body)])
 
+(defn route-with-method
+  [method pattern bindings body]
+  `[~pattern {~method (handler-fn ~bindings ~body)}])
+
 (defmacro GET
   [pattern bindings & body]
-  `[~pattern {:get (handler-fn ~bindings ~body)}])
+  (route-with-method :get pattern bindings body))
+
+(defmacro HEAD
+  [pattern bindings & body]
+  (route-with-method :head pattern bindings body))
 
 (defmacro PUT
   [pattern bindings & body]
-  `[~pattern {:put (handler-fn ~bindings ~body)}])
+  (route-with-method :put pattern bindings body))
+
+(defmacro POST
+  [pattern bindings & body]
+  (route-with-method :post pattern bindings body))

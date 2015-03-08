@@ -11,7 +11,6 @@
             [clojure.string :as string]
             [schema.core :as schema]
             [cheshire.core :as cheshire]
-    ;[compojure.core :as compojure :refer [GET ANY PUT]]
             [liberator.core :refer [defresource]]
             [liberator.representation :as representation]
             ;[liberator.dev :as liberator-dev]
@@ -55,7 +54,7 @@
       (rr/content-type "text/plain")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Compojure app
+;;; Web app
 
 (defn try-to-parse
   [body]
@@ -238,7 +237,7 @@
       (ca/get-certificate-statuses settings)
       (as-json-or-pson context))))
 
-(schema/defn routes
+(schema/defn web-context
   [ca-settings :- ca/CaSettings]
   (pl-bidi/context ["/" :environment]
     (ANY ["/certificate_status/" :subject] [subject]
@@ -261,17 +260,25 @@
   [handler version]
   (fn [request]
     (let [response (handler request)]
-      ; Our compojure app returns nil responses sometimes.
+      ; Our webL app returns nil responses sometimes.
       ; In that case, don't add the header.
       (when response
         (rr/header response "X-Puppet-Version" version)))))
 
 (schema/defn ^:always-validate
+  wrap-middleware
+  [puppet-version handler]
+  (-> handler
+    ;(liberator-dev/wrap-trace :header)           ; very useful for debugging!
+    (wrap-with-puppet-version-header puppet-version)
+    (ringutils/wrap-response-logging)))
+
+#_(schema/defn ^:always-validate
   build-ring-handler
   [ca-settings :- ca/CaSettings
    puppet-version :- schema/Str]
   (-> (routes ca-settings)
-      ;(liberator-dev/wrap-trace :header)           ; very useful for debugging!
       (pl-bidi/context->handler)
+      ;(liberator-dev/wrap-trace :header)           ; very useful for debugging!
       (wrap-with-puppet-version-header puppet-version)
       (ringutils/wrap-response-logging)))

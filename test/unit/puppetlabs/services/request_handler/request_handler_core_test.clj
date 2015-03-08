@@ -66,7 +66,7 @@
           "Unexpected body for jruby in wrapped request")))
   (testing "post with form parameters returns expected values"
     (let [body-string "one=1&two=2%202&arr[]=3&arr[]=4"
-          wrapped-request (core/wrap-params-for-jruby
+          wrapped-request #spy/d (core/wrap-params-for-jruby
                             {:body         (StringReader. body-string)
                              :content-type "application/x-www-form-urlencoded"
                              :params       {:bogus ""}})]
