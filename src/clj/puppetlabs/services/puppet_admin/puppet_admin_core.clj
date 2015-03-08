@@ -6,7 +6,6 @@
             [schema.core :as schema]
             [liberator.core :refer [defresource]]
             ;[liberator.dev :as liberator-dev]
-            ;[compojure.core :as compojure]
             [puppetlabs.bidi :as pl-bidi]))
 
 

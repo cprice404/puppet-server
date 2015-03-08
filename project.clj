@@ -13,7 +13,9 @@
 (defproject puppetlabs/puppet-server ps-version
   :description "Puppet Server"
 
-  :dependencies [[org.clojure/clojure "1.6.0"]
+  :exclusions   [[org.clojure/clojure]]
+
+  :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/data.json "0.2.3"]
                  [org.clojure/tools.reader "0.8.9"]
                  [org.clojure/tools.macro "0.1.5"]

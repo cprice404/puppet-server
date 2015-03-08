@@ -3,7 +3,6 @@
             [puppetlabs.trapperkeeper.core :refer [defservice]]
             [puppetlabs.services.master.master-core :as core]
             [puppetlabs.puppetserver.certificate-authority :as ca]
-            [compojure.core :as compojure]
             [puppetlabs.bidi :as pl-bidi]))
 
 (defservice master-service
