@@ -240,26 +240,11 @@
 
 (schema/defn routes
   [ca-settings :- ca/CaSettings]
-  #_(compojure/context "/:environment" [environment]
-     (compojure/routes
-       (ANY "/certificate_status/:subject" [subject]
-            (certificate-status subject ca-settings))
-       (ANY "/certificate_statuses/:ignored-but-required" [do-not-use]
-            (certificate-statuses ca-settings)))
-     (GET "/certificate/:subject" [subject]
-          (handle-get-certificate subject ca-settings))
-     (compojure/context "/certificate_request/:subject" [subject]
-                        (GET "/" []
-                             (handle-get-certificate-request subject ca-settings))
-                        (PUT "/" {body :body}
-                             (handle-put-certificate-request! subject body ca-settings)))
-     (GET "/certificate_revocation_list/:ignored-node-name" []
-          (handle-get-certificate-revocation-list ca-settings)))
   (pl-bidi/context ["/" :environment]
-    (ANY ["/certificate_status/" :subject] [subject :as req]
-         ((certificate-status subject ca-settings) req))
-    (ANY ["/certificate_statuses/" :ignored-but-required] req
-         ((certificate-statuses ca-settings) req))
+    (ANY ["/certificate_status/" :subject] [subject]
+         (certificate-status subject ca-settings))
+    (ANY ["/certificate_statuses/" :ignored-but-required] []
+         (certificate-statuses ca-settings))
     (GET ["/certificate/" :subject] [subject]
          (handle-get-certificate subject ca-settings))
     (pl-bidi/context ["/certificate_request/" :subject]

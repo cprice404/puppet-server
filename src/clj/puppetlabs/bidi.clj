@@ -1,12 +1,15 @@
 (ns puppetlabs.bidi
   (:require [bidi.ring :as bidi-ring]
             [clojure.zip :as zip]
-            [compojure.core :as compojure]))
+            [compojure.core :as compojure]
+            [compojure.response :as response]))
 
 (defmacro handler-fn
   [bindings body]
   `(fn [request#]
-     (compojure/let-request [~bindings request#] ~@body)))
+     (response/render
+       (compojure/let-request [~bindings request#] ~@body)
+       request#)))
 
 (defn update-route-info
   [route-info pattern]
