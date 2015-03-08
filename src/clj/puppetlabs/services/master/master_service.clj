@@ -26,9 +26,10 @@
      (log/info "Master Service adding a ring handler")
      (add-ring-handler
        this
-       (pl-bidi/context-handler
-        path
-        (core/build-ring-handler handle-request))))
+       (core/wrap-middleware
+         (pl-bidi/context-handler
+           path
+           (core/root-routes handle-request)))))
    context)
   (start
     [this context]

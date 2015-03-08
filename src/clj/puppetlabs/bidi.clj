@@ -2,7 +2,8 @@
   (:require [bidi.ring :as bidi-ring]
             [clojure.zip :as zip]
             [compojure.core :as compojure]
-            [compojure.response :as response]))
+            [compojure.response :as response]
+            [ring.util.response :as ring-response]))
 
 (defmacro handler-fn
   [bindings body]
@@ -10,6 +11,10 @@
      (response/render
        (compojure/let-request [~bindings request#] ~@body)
        request#)))
+
+(defn route-with-method
+  [method pattern bindings body]
+  `[~pattern {~method (handler-fn ~bindings ~body)}])
 
 (defn update-route-info
   [route-info pattern]
@@ -64,7 +69,7 @@
 
 (defn routes
   [& routes]
-  (vec routes))
+  ["" (vec routes)])
 
 (defn context->handler
   [context]
@@ -80,13 +85,17 @@
   (context->handler
     (apply context url-prefix routes)))
 
+
+(defn not-found
+  [body]
+  [[#".*" :rest] (fn [request]
+                   (-> (response/render body request)
+                       (ring-response/status 404)))])
+
+
 (defmacro ANY
   [pattern bindings & body]
   `[~pattern (handler-fn ~bindings ~body)])
-
-(defn route-with-method
-  [method pattern bindings body]
-  `[~pattern {~method (handler-fn ~bindings ~body)}])
 
 (defmacro GET
   [pattern bindings & body]

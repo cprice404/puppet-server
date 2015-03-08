@@ -2,9 +2,16 @@
   (:require [clojure.test :refer :all]
             [puppetlabs.services.master.master-core :refer :all]
             [ring.mock.request :as mock]
-            [schema.test :as schema-test]))
+            [schema.test :as schema-test]
+            [puppetlabs.bidi :as pl-bidi]))
 
 (use-fixtures :once schema-test/validate-schemas)
+
+(defn build-ring-handler
+  [request-handler]
+  (-> (root-routes request-handler)
+      (pl-bidi/context->handler)
+      wrap-middleware))
 
 (deftest test-master-routes
   (let [handler     (fn ([req] {:request req}))

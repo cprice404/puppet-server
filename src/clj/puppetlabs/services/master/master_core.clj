@@ -68,15 +68,6 @@
     (pl-bidi/GET ["/facts_search/" [#".*" :rest]] request
                    (request-handler request))))
 
-(defn root-routes
-  "Creates all of the compojure routes for the master."
-  [request-handler]
-  (pl-bidi/routes
-    (pl-bidi/context "/v2.0"
-                       (v2_0-routes request-handler))
-    (pl-bidi/context "/:environment"
-                       (legacy-routes request-handler))))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Lifecycle Helper Functions
 
@@ -106,7 +97,22 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Public
 
-(defn build-ring-handler
+(defn root-routes
+  "Creates all of the compojure routes for the master."
+  [request-handler]
+  (pl-bidi/routes
+    (pl-bidi/context "/v2.0"
+                     (v2_0-routes request-handler))
+    (pl-bidi/context ["/" :environment]
+                     (legacy-routes request-handler))))
+
+(defn wrap-middleware
+  [handler]
+  (-> handler
+      ringutils/wrap-request-logging
+      ringutils/wrap-response-logging))
+
+#_(defn build-ring-handler
   "Creates the entire compojure application (all routes and middleware)."
   [request-handler]
   {:pre [(fn? request-handler)]}

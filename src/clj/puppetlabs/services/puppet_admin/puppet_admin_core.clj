@@ -5,7 +5,9 @@
             [puppetlabs.puppetserver.liberator-utils :as liberator-utils]
             [schema.core :as schema]
             [liberator.core :refer [defresource]]
-            [liberator.dev :as liberator-dev]))
+            ;[liberator.dev :as liberator-dev]
+            ;[compojure.core :as compojure]
+            [puppetlabs.bidi :as pl-bidi]))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -79,17 +81,17 @@
 (defn v1-routes
   [jruby-service]
   "Routes for v1 of the Puppet Admin HTTP API."
-  (compojure/routes
-    (compojure/ANY "/environment-cache" []
+  (pl-bidi/routes
+    (pl-bidi/ANY "/environment-cache" []
       (environment-cache-resource jruby-service))
-    (compojure/ANY "/jruby-pool" []
+    (pl-bidi/ANY "/jruby-pool" []
        (jruby-pool-resource jruby-service))))
 
 (defn versioned-routes
   [jruby-service]
-  (compojure/routes
-    (compojure/context "/v1" [] (v1-routes jruby-service))
-    (route/not-found "Not Found")))
+  (pl-bidi/routes
+    (pl-bidi/context "/v1" (v1-routes jruby-service))
+    #_(pl-bidi/not-found "Not Found")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -110,9 +112,8 @@
   [path :- schema/Str
    settings :- PuppetAdminSettings
    jruby-service :- jruby-puppet/JRubyPuppetService]
-  (-> (compojure/context
+  (-> (pl-bidi/context-handler
         path
-        []
         (versioned-routes jruby-service))
       ;(liberator-dev/wrap-trace :header)           ; very useful for debugging!
       (ringutils/wrap-with-cert-whitelist-check settings)))
