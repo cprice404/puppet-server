@@ -8,14 +8,14 @@
 ;;; Routing
 
 (defn v2_0-routes
-  "Creates the compojure routes to handle the master's '/v2.0' routes."
+  "Creates the web routes to handle the master's '/v2.0' routes."
   [request-handler]
   (pl-bidi/routes
     (pl-bidi/GET "/environments" request
                    (request-handler request))))
 
 (defn legacy-routes
-  "Creates the compojure routes to handle the master's 'legacy' routes
+  "Creates the web routes to handle the master's 'legacy' routes
    - ie, any route without a version in its path (eg, /v2.0/whatever) - but
    excluding the CA-related endpoints, which are handled separately by the
    CA service."
@@ -98,7 +98,7 @@
 ;;; Public
 
 (defn root-routes
-  "Creates all of the compojure routes for the master."
+  "Creates all of the web routes for the master."
   [request-handler]
   (pl-bidi/routes
     (pl-bidi/context "/v2.0"
@@ -112,10 +112,3 @@
       ringutils/wrap-request-logging
       ringutils/wrap-response-logging))
 
-#_(defn build-ring-handler
-  "Creates the entire compojure application (all routes and middleware)."
-  [request-handler]
-  {:pre [(fn? request-handler)]}
-  (-> (root-routes request-handler)
-      ringutils/wrap-request-logging
-      ringutils/wrap-response-logging))
