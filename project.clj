@@ -15,11 +15,15 @@
 
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/data.json "0.2.3"]
+                 [org.clojure/tools.reader "0.8.9"]
+                 [org.clojure/tools.macro "0.1.5"]
                  [commons-codec "1.9"]
                  [puppetlabs/trapperkeeper ~tk-version]
                  [puppetlabs/kitchensink ~ks-version]
                  [puppetlabs/certificate-authority "0.6.0"]
                  [puppetlabs/http-client "0.4.0"]
+                 [joda-time "2.3"]
+                 [clj-time "0.6.0"]
                  [org.jruby/jruby-core "1.7.15" :exclusions [com.github.jnr/jffi com.github.jnr/jnr-x86asm]]
                  ;; NOTE: jruby-stdlib packages some unexpected things inside
                  ;; of its jar; please read the detailed notes above the
@@ -28,8 +32,7 @@
                  [com.github.jnr/jffi "1.2.7"]
                  [com.github.jnr/jffi "1.2.7" :classifier "native"]
                  [com.github.jnr/jnr-x86asm "1.0.2"]
-                 [clj-time "0.5.1" :exclusions [joda-time]]
-                 ;[compojure "1.1.8" :exclusions [org.clojure/tools.macro]]
+                 [compojure "1.3.2"]
                  [bidi "1.18.7"]
                  [liberator "0.12.0"]
                  [me.raynes/fs "1.4.5"]
