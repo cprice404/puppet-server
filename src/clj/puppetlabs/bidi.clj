@@ -1,5 +1,6 @@
 (ns puppetlabs.bidi
   (:require [bidi.ring :as bidi-ring]
+            [bidi.bidi :as bidi]
             [clojure.zip :as zip]
             [compojure.core :as compojure]
             [compojure.response :as response]
@@ -74,7 +75,7 @@
 (defn context->handler
   [context]
   (with-meta
-    (bidi-ring/make-handler context)
+    (bidi-ring/make-handler (bidi/compile-route context))
     {:routes (route-metadata context)}))
 
 (defn context [url-prefix & routes]

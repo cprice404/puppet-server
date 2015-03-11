@@ -37,7 +37,7 @@
                  [compojure "1.3.2"]
                  [ring/ring-core "1.3.2"]
                  [ring/ring-codec "1.0.0"]
-                 [bidi "1.18.7"]
+                 [bidi "1.18.8-SNAPSHOT"]
                  [liberator "0.12.0"]
                  [me.raynes/fs "1.4.5"]
                  [prismatic/schema "0.2.2"]
