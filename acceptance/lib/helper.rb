@@ -1,4 +1,5 @@
 require 'beaker/dsl/install_utils'
+require 'beaker/dsl/ezbake_utils'
 
 module PuppetServerExtensions
 
@@ -128,13 +129,13 @@ module PuppetServerExtensions
 
     destination = File.join("./log/latest/puppetserver/", relative_path)
     FileUtils.mkdir_p(destination)
-    scp_from master, "/var/log/puppetlabs/puppetserver/puppetserver.log", destination
+    scp_from master, "/var/log/puppetserver/puppetserver.log", destination
     if use_journalctl
       puppetserver_daemon_log = on(master, "journalctl -u puppetserver").stdout.strip
       destination = File.join(destination, "puppetserver-daemon.log")
       File.open(destination, 'w') {|file| file.puts puppetserver_daemon_log }
     else
-      scp_from master, "/var/log/puppetlabs/puppetserver/puppetserver-daemon.log", destination
+      scp_from master, "/var/log/puppetserver/puppetserver-daemon.log", destination
     end
   end
 
@@ -150,6 +151,65 @@ module PuppetServerExtensions
     else
       abort("Invalid install type: " + test_config[:puppetserver_install_type])
     end
+  end
+
+  def get_rubylibdir host, config_key
+    on(host, "ruby -rrbconfig -e \"puts Config::CONFIG['#{config_key}']\"").stdout.strip
+  end
+
+  def configure_puppet_server
+    variant, version, _, _ = master['platform'].to_array
+
+    case variant
+    when /^fedora$/
+      config_key = 'sitelibdir'
+      if version.to_i >= 17
+        config_key = 'vendorlibdir'
+      end
+    when /^(el|centos)$/
+      config_key = 'sitelibdir'
+      if version.to_i >= 7
+        config_key = 'vendorlibdir'
+      end
+    when /^(debian|ubuntu)$/
+      config_key = 'sitelibdir'
+    else
+      logger.warn("#{platform}: Unsupported platform for puppetserver.")
+    end
+
+    rubylibdir = get_rubylibdir master, config_key
+    create_remote_file master, '/etc/puppetserver/conf.d/os-settings.conf', <<EOF
+os-settings: {
+    ruby-load-path: [#{rubylibdir}]
+}
+EOF
+    on master, "chmod 0644 /etc/puppetserver/conf.d/os-settings.conf"
+
+  end
+
+  def puppet_apply_as_puppet_user
+    # When puppet apply is run for the first time, certain directories are
+    # created as the user owning the process. In order to avoid creating these
+    # directories as root (making them inaccessible to the puppet user) we must
+    # first run puppet apply as the puppet user whenever puppet is first
+    # installed.
+    manifest_path = master.tmpfile("puppetserver_manifest.pp")
+    herp_path = master.tmpfile("herp")
+
+    manifest_content = <<-EOS
+    file { "herp":
+      path => '#{herp_path}',
+      ensure => 'present',
+      content => 'derp',
+    }
+    EOS
+
+    user = master.puppet('master')['user']
+    create_remote_file(master, manifest_path, manifest_content)
+    on master, "chown #{user}:#{user} #{manifest_path}"
+    on master, "chown #{user}:#{user} #{herp_path}"
+
+    on master, "su -s /bin/bash -c \"puppet apply #{manifest_path}\" #{user}"
   end
 
   def upgrade_package(host, name)
