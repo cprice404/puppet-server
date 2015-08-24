@@ -1,13 +1,14 @@
 (ns puppetlabs.puppetserver.lockable-pool-test
   (:require [clojure.test :refer :all])
-  (:import (com.puppetlabs.puppetserver.pool TwoSemaphoresLockablePool TwoQueuesLockablePool)))
+  (:import (com.puppetlabs.puppetserver.pool TwoSemaphoresLockablePool TwoQueuesLockablePool RRWLLockablePool)))
 
 (defn create-empty-pool
   [size]
   ;; NOTE: uncomment one of the following two lines, to run the tests against
   ;; the preferred implementation.
   ;(TwoSemaphoresLockablePool. size)
-  (TwoQueuesLockablePool. size)
+  ;(TwoQueuesLockablePool. size)
+  (RRWLLockablePool. size)
   )
 
 (defn create-populated-pool
@@ -158,6 +159,31 @@
         (.returnItem pool instance))
       (is (true? true))
       (.unlock pool))))
+
+(deftest pool-lock-reentrant-with-many-borrows-test
+  (testing "the thread that holds the pool lock may borrow instances while holding the lock, even with other borrows queued"
+    (let [pool (create-populated-pool 2)]
+      (.lock pool)
+      (is (true? true))
+      (let [borrow-thread-1 (future (do
+                                      (let [instance (.borrowItem pool)]
+                                        (.returnItem pool instance))))
+            borrow-thread-2 (future (do
+                                      (let [instance (.borrowItem pool)]
+                                        (.returnItem pool instance))))]
+        ;; this is racey, but the only ways i could think of to make it non-racey
+        ;; depended on knowledge of the implementation
+        (Thread/sleep 500)
+        (is (not (realized? borrow-thread-1)))
+        (is (not (realized? borrow-thread-2)))
+
+        (let [instance (.borrowItem pool)]
+          (is (true? true))
+          (.returnItem pool instance))
+        (is (true? true))
+        (.unlock pool)
+        @borrow-thread-1
+        @borrow-thread-2))))
 
 (deftest pool-lock-blocks-registration-test
   (testing "register blocks while the lock is held"
