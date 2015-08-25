@@ -18,6 +18,9 @@ public class RRWLLockablePool<E> implements LockablePool<E> {
 
     @Override
     public E borrowItem() throws InterruptedException {
+        if (lock.isWriteLockedByCurrentThread()) {
+            throw new IllegalStateException("The current implementation has a risk of deadlock if you attempt to borrow a JRuby instance while holding the write lock!");
+        }
         E item = live_queue.takeFirst();
         lock.readLock().lock();
         return item;
