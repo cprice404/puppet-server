@@ -1,6 +1,6 @@
 (ns puppetlabs.puppetserver.lockable-pool-test
   (:require [clojure.test :refer :all])
-  (:import (com.puppetlabs.puppetserver.pool TwoSemaphoresLockablePool TwoQueuesLockablePool RRWLLockablePool)))
+  (:import (com.puppetlabs.puppetserver.pool TwoSemaphoresLockablePool TwoQueuesLockablePool RRWLLockablePool ReentrantLockLockablePool)))
 
 (defn create-empty-pool
   [size]
@@ -9,6 +9,7 @@
   ;(TwoSemaphoresLockablePool. size)
   ;(TwoQueuesLockablePool. size)
   (RRWLLockablePool. size)
+  ;(ReentrantLockLockablePool. size)
   )
 
 (defn create-populated-pool
