@@ -130,8 +130,10 @@
   [master-ns :- schema/Keyword
    config-route]
   (cond
-    (and (map? config-route) (contains? config-route :master-routes))
-    (:master-routes config-route)
+    (and (map? config-route) (or (contains? config-route :route)
+                                 (contains? config-route :master-routes)))
+    (or (:route config-route)
+        (:master-routes config-route))
 
     (string? config-route)
     config-route
