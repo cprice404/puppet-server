@@ -27,6 +27,28 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JRubyPuppet Test fixtures
 
+(schema/defn ^:always-validate with-puppet-conf-files
+  "TODO"
+  ([puppet-conf-files :- {schema/Str schema/Str}]
+   (with-puppet-conf-files puppet-conf-files conf-dir))
+  ([puppet-conf-files :- {schema/Str schema/Str}
+    dest-dir :- schema/Str]
+
+   (let [target-paths (reduce
+                       (fn [acc filename]
+                         (assoc acc filename (fs/file dest-dir filename)))
+                       {}
+                       (keys puppet-conf-files))]
+     (fn [f]
+       (doseq [filename (keys puppet-conf-files)]
+         (fs/copy+ (get puppet-conf-files filename)
+                   (get target-paths filename)))
+       (try
+         (f)
+         (finally
+           (doseq [target-path (vals target-paths)]
+             (fs/delete target-path))))))))
+
 (defn with-puppet-conf
   "This function returns a test fixture that will copy a specified puppet.conf
   file into the provided location for testing, and then delete it after the
@@ -35,13 +57,7 @@
   ([puppet-conf-file]
    (with-puppet-conf puppet-conf-file conf-dir))
   ([puppet-conf-file dest-dir]
-   (let [target-path (fs/file dest-dir "puppet.conf")]
-     (fn [f]
-       (fs/copy+ puppet-conf-file target-path)
-       (try
-         (f)
-         (finally
-           (fs/delete target-path)))))))
+   (with-puppet-conf-files {"puppet.conf" puppet-conf-file} dest-dir)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; JRubyPuppet Test util functions
