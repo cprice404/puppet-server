@@ -5,11 +5,11 @@
 
 (defn node-app
   [version]
-  (let [param-spec {:optional paging/query-params}]
-    {"" (comp (http-q/query-handler version)
-              #(http-q/restrict-query-to-entity "nodes" %)
-              http-q/restrict-query-to-active-nodes
-              (http-q/extract-query' param-spec))
+  (let [param-spec {:optional query-params}]
+    {"" (comp (query-handler version)
+              #(restrict-query-to-entity "nodes" %)
+              restrict-query-to-active-nodes
+              (extract-query' param-spec))
 
      ["/" :node]
      {"" (-> (fn [{:keys [globals route-params]}]
@@ -26,8 +26,8 @@
         (cmdi/wrap-routes ["" (facts-app version)]
                           (fn [handler]
                             (comp handler
-                                  http-q/restrict-query-to-node'
-                                  (http-q/extract-query' param-spec))))
+                                  restrict-query-to-node'
+                                  (extract-query' param-spec))))
         #(wrap-with-parent-check'' % version :node :node)))
 
       ["/resources"]
@@ -36,23 +36,23 @@
         (cmdi/wrap-routes ["" (resources-app version)]
                           (fn [handler]
                             (comp handler
-                                  http-q/restrict-query-to-node'
-                                  (http-q/extract-query' param-spec))))
+                                  restrict-query-to-node'
+                                  (extract-query' param-spec))))
         #(wrap-with-parent-check'' % version :node :node)))}}))
 
 (def v4-app
   {"" (experimental-index-app version)
    "/facts" (facts-app version)
-   "/edges" (comp (http-q/query-handler version)
-                  http-q/restrict-query-to-active-nodes
-                  #(http-q/restrict-query-to-entity "edges" %)
-                  (http-q/extract-query' {:optional paging/query-params}))
+   "/edges" (comp (query-handler version)
+                  restrict-query-to-active-nodes
+                  #(restrict-query-to-entity "edges" %)
+                  (extract-query' {:optional query-params}))
    "/factsets" (factset-app version)
    "/fact-names" (fact-names-app version)
-   "/fact-contents"   (comp (http-q/query-handler version)
-                            #(http-q/restrict-query-to-entity "fact_contents" %)
-                            http-q/restrict-query-to-active-nodes
-                            (http-q/extract-query' {:optional paging/query-params}))
+   "/fact-contents"   (comp (query-handler version)
+                            #(restrict-query-to-entity "fact_contents" %)
+                            restrict-query-to-active-nodes
+                            (extract-query' {:optional query-params}))
    "/fact-paths" (create-paging-query-handler "fact_paths")
 
    "/nodes" (node-app version)
@@ -66,7 +66,7 @@
                                                          :optional (concat ["counts_filter" "count_by"
                                                                             "distinct_resources" "distinct_start_time"
                                                                             "distinct_end_time"]
-                                                                           paging/query-params)})
+                                                                           query-params)})
    "/aggregate-event-counts" (create-query-handler "aggregate_event_counts"
                                                    {:required ["summarize_by"]
                                                     :optional ["query" "counts_filter" "count_by"
