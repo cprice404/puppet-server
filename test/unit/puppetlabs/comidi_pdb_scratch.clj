@@ -7,6 +7,8 @@
 ;; Fake impls of real PDB functions, just to test routes
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(def version :v4)
+
 (def query-params ["query" "limit" "offset" "order_by" "include_total"])
 
 (defn add-action-to-req
@@ -18,7 +20,7 @@
   (fn [req]
     (let [req (add-action-to-req req :query-handler)]
       {:status 200
-       :body "STREAMING BODY"
+       :body "QUERY HANDLER: STREAMING BODY"
        :fake-query-actions (:fake-query-actions req)})))
 
 (defn restrict-query-to-entity
@@ -56,6 +58,13 @@
   [req]
   (add-action-to-req req (keyword (str "restrict-query-to-node'_"
                                        (get-in req [:route-params :node])))))
+
+(defn wrap-with-parent-check''
+  [app version parent route-param-key]
+  (fn [req]
+    (let [req (add-action-to-req req
+                                 (keyword (str "wrap-with-parent-check''-" parent)))]
+      (app req))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PDB Route Trees
@@ -161,9 +170,9 @@
    })
 
 (def routes
-  ["" {"/v1" [[true (refuse-retired-api "v1")]]
-       "/v2" [[true (refuse-retired-api "v2")]]
-       "/v3" [[true (refuse-retired-api "v3")]]
+  ["" {;"/v1" [[true (refuse-retired-api "v1")]]
+       ;"/v2" [[true (refuse-retired-api "v2")]]
+       ;"/v3" [[true (refuse-retired-api "v3")]]
        "/v4" v4-app}])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -176,4 +185,11 @@
 
 (deftest test-routes
   (let [handler (cmdi/routes->handler routes)]
-    (is (= :foo (handler (request "/foo/bar"))))))
+    (testing "/v4/nodes"
+      (let [resp (handler (request "/v4/nodes"))]
+        (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
+        (is (= '(:query-handler
+                 :restrict-query-to-nodes
+                 :restrict-query-to-active-nodes
+                 :extract-query')
+               (:fake-query-actions resp)))))))
