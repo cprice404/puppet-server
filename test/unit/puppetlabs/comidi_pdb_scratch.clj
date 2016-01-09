@@ -142,7 +142,42 @@
 (schema/defn ^:always-validate node-app :- bidi-schema/RoutePair
   [version]
   (let [param-spec {:optional query-params}]
-    [""
+    (comidi/routes
+     (comidi/ANY "" []
+                 (comp (query-handler version)
+                       #(restrict-query-to-entity "nodes" %)
+                       restrict-query-to-active-nodes
+                       (extract-query' param-spec)))
+     (comidi/ANY ["/" :node] []
+                 (-> (fn [{:keys [globals route-params]}]
+                       (node-status version
+                                    (:node route-params)
+                                    (select-keys globals [:scf-read-db :url-prefix :warn-experimental])))
+                     ;; Being a singular item, querying and pagination don't really make
+                     ;; sense here
+                     (validate-query-params {})))
+     (comidi/context ["/" :node "/facts"]
+                     (cmdi/wrap-routes
+                      (cmdi/wrap-routes (facts-app version)
+                                        #_["" (facts-app version)]
+                                        (fn [handler]
+                                          (comp handler
+                                                restrict-query-to-node'
+                                                (extract-query' param-spec))))
+                      #(wrap-with-parent-check'' % version :node :node)))
+     #_(comidi/ANY ["/" :node "/facts"] []
+                 (fn [req]
+                   (second
+                    (cmdi/wrap-routes
+                     (cmdi/wrap-routes (facts-app version)
+                                       #_["" (facts-app version)]
+                                       (fn [handler]
+                                         (comp handler
+                                               restrict-query-to-node'
+                                               (extract-query' param-spec))))
+                     #(wrap-with-parent-check'' % version :node :node)))))
+     )
+    #_[""
      {"" (comp (query-handler version)
                #(restrict-query-to-entity "nodes" %)
                restrict-query-to-active-nodes
