@@ -76,7 +76,29 @@
 (schema/defn ^:always-validate facts-app :- bidi-schema/RoutePair
   [version]
   (let [param-spec {:optional query-params}]
-    [""
+    (comidi/routes
+     (comidi/ANY "" []
+                 (comp (query-handler version)
+                       #(restrict-query-to-entity "facts" %)
+                       restrict-query-to-active-nodes
+                       (extract-query' param-spec)))
+     (comidi/ANY ["/" :fact] []
+                 (comp (query-handler version)
+                       #(restrict-query-to-entity "facts" %)
+                       (fn [{:keys [route-params] :as req}]
+                         (restrict-fact-query-to-name (:fact route-params) req))
+                       restrict-query-to-active-nodes
+                       (extract-query' param-spec)))
+     (comidi/ANY ["/" :fact "/" :value] []
+                 (comp (query-handler version)
+                       #(restrict-query-to-entity "facts" %)
+                       (fn [{:keys [route-params] :as req}]
+                         (restrict-fact-query-to-name (:fact route-params) req))
+                       (fn [{:keys [route-params] :as req}]
+                         (restrict-fact-query-to-value (:value route-params) req))
+                       restrict-query-to-active-nodes
+                       (extract-query' param-spec))))
+    #_[""
      {""
       (comp (query-handler version)
             #(restrict-query-to-entity "facts" %)
