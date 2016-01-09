@@ -2,7 +2,9 @@
   (:require [clojure.test :refer :all]
             [puppetlabs.comidi :as cmdi]
             [ring.mock.request :as mock]
-            [puppetlabs.comidi :as comidi]))
+            [puppetlabs.comidi :as comidi]
+            [schema.core :as schema]
+            [bidi.schema :as bidi-schema]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Fake impls of real PDB functions, just to test routes
@@ -71,72 +73,75 @@
 ;; PDB Route Trees
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn facts-app
+(schema/defn ^:always-validate facts-app :- bidi-schema/RoutePair
   [version]
   (let [param-spec {:optional query-params}]
-    {""
-     (comp (query-handler version)
-           #(restrict-query-to-entity "facts" %)
-           restrict-query-to-active-nodes
-           (extract-query' param-spec))
+    [""
+     {""
+      (comp (query-handler version)
+            #(restrict-query-to-entity "facts" %)
+            restrict-query-to-active-nodes
+            (extract-query' param-spec))
 
-     ["/" :fact]
+      ["/" :fact]
+      {"" (comp (query-handler version)
+                #(restrict-query-to-entity "facts" %)
+                (fn [{:keys [route-params] :as req}]
+                  (restrict-fact-query-to-name (:fact route-params) req))
+                restrict-query-to-active-nodes
+                (extract-query' param-spec))
+
+       ["/" :value]
+       (comp (query-handler version)
+             #(restrict-query-to-entity "facts" %)
+             (fn [{:keys [route-params] :as req}]
+               (restrict-fact-query-to-name (:fact route-params) req))
+             (fn [{:keys [route-params] :as req}]
+               (restrict-fact-query-to-value (:value route-params) req))
+             restrict-query-to-active-nodes
+             (extract-query' param-spec))}}]))
+
+(schema/defn ^:always-validate node-app :- bidi-schema/RoutePair
+  [version]
+  (let [param-spec {:optional query-params}]
+    [""
      {"" (comp (query-handler version)
-               #(restrict-query-to-entity "facts" %)
-               (fn [{:keys [route-params] :as req}]
-                 (restrict-fact-query-to-name (:fact route-params) req))
+               #(restrict-query-to-entity "nodes" %)
                restrict-query-to-active-nodes
                (extract-query' param-spec))
 
-      ["/" :value]
-      (comp (query-handler version)
-            #(restrict-query-to-entity "facts" %)
-            (fn [{:keys [route-params] :as req}]
-              (restrict-fact-query-to-name (:fact route-params) req))
-            (fn [{:keys [route-params] :as req}]
-              (restrict-fact-query-to-value (:value route-params) req))
-            restrict-query-to-active-nodes
-            (extract-query' param-spec))}}))
+      ["/" :node]
+      {"" (-> (fn [{:keys [globals route-params]}]
+                (node-status version
+                             (:node route-params)
+                             (select-keys globals [:scf-read-db :url-prefix :warn-experimental])))
+              ;; Being a singular item, querying and pagination don't really make
+              ;; sense here
+              (validate-query-params {}))
 
-(defn node-app
-  [version]
-  (let [param-spec {:optional query-params}]
-    {"" (comp (query-handler version)
-              #(restrict-query-to-entity "nodes" %)
-              restrict-query-to-active-nodes
-              (extract-query' param-spec))
+       ["/facts"]
+       (second
+        (cmdi/wrap-routes
+         (cmdi/wrap-routes (facts-app version)
+                           #_["" (facts-app version)]
+                           (fn [handler]
+                             (comp handler
+                                   restrict-query-to-node'
+                                   (extract-query' param-spec))))
+         #(wrap-with-parent-check'' % version :node :node)))
 
-     ["/" :node]
-     {"" (-> (fn [{:keys [globals route-params]}]
-               (node-status version
-                            (:node route-params)
-                            (select-keys globals [:scf-read-db :url-prefix :warn-experimental])))
-             ;; Being a singular item, querying and pagination don't really make
-             ;; sense here
-             (validate-query-params {}))
-
-      ["/facts"]
-      (second
-       (cmdi/wrap-routes
-        (cmdi/wrap-routes ["" (facts-app version)]
-                          (fn [handler]
-                            (comp handler
-                                  restrict-query-to-node'
-                                  (extract-query' param-spec))))
-        #(wrap-with-parent-check'' % version :node :node)))
-
-      #_["/resources"]
-      #_(second
-       (cmdi/wrap-routes
-        (cmdi/wrap-routes ["" (resources-app version)]
-                          (fn [handler]
-                            (comp handler
-                                  restrict-query-to-node'
-                                  (extract-query' param-spec))))
-        #(wrap-with-parent-check'' % version :node :node)))}}))
+       #_["/resources"]
+       #_(second
+          (cmdi/wrap-routes
+           (cmdi/wrap-routes ["" (resources-app version)]
+                             (fn [handler]
+                               (comp handler
+                                     restrict-query-to-node'
+                                     (extract-query' param-spec))))
+           #(wrap-with-parent-check'' % version :node :node)))}}]))
 
 (def v4-app
-  [""
+  #_[""
    {;"" (experimental-index-app version)
     "/facts" (facts-app version)
     ;"/edges" (comp (query-handler version)
@@ -169,7 +174,10 @@
     ;                                                            "distinct_resources" "distinct_start_time"
     ;                                                            "distinct_end_time"]})
     ;"/reports" (reports-app version)
-    }])
+    }]
+  (comidi/routes
+   (comidi/context "/facts" (facts-app version))
+   (comidi/context "/nodes" (node-app version))))
 
 (def routes
   #_["" {;"/v1" [[true (refuse-retired-api "v1")]]
