@@ -185,11 +185,78 @@
 
 (deftest test-routes
   (let [handler (cmdi/routes->handler routes)]
+    (testing "/v4/facts"
+      (let [resp (handler (request "/v4/facts"))]
+        (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
+        (is (= [:extract-query'
+                :restrict-query-to-active-nodes
+                :restrict-query-to-facts
+                :query-handler]
+               (:fake-query-actions resp)))))
+    (testing "/v4/facts/factname"
+      (let [resp (handler (request "/v4/facts/factname"))]
+        (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
+        (is (= [:extract-query'
+                :restrict-query-to-active-nodes
+                :restrict-fact-query-to-name_factname
+                :restrict-query-to-facts
+                :query-handler]
+               (:fake-query-actions resp)))))
+    (testing "/v4/facts/factname/factvalue"
+      (let [resp (handler (request "/v4/facts/factname/factvalue"))]
+        (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
+        (is (= [:extract-query'
+                :restrict-query-to-active-nodes
+                :restrict-fact-query-to-value_factvalue
+                :restrict-fact-query-to-name_factname
+                :restrict-query-to-facts
+                :query-handler]
+               (:fake-query-actions resp)))))
     (testing "/v4/nodes"
       (let [resp (handler (request "/v4/nodes"))]
         (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
         (is (= [:extract-query'
                 :restrict-query-to-active-nodes
                 :restrict-query-to-nodes
+                :query-handler]
+               (:fake-query-actions resp)))))
+    (testing "/v4/nodes/foo.localdomain"
+      (let [resp (handler (request "/v4/nodes/foo.localdomain"))]
+        (is (= "NODE STATUS" (:body resp)))
+        (is (nil? (:fake-query-actions resp)))))
+    (testing "/v4/nodes/foo.localdomain/facts"
+      (let [resp (handler (request "/v4/nodes/foo.localdomain/facts"))]
+        (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
+        (is (= [:wrap-with-parent-check''-:node
+                :extract-query'
+                :restrict-query-to-node'_foo.localdomain
+                :extract-query'
+                :restrict-query-to-active-nodes
+                :restrict-query-to-facts
+                :query-handler]
+               (:fake-query-actions resp)))))
+    (testing "/v4/nodes/foo.localdomain/facts/factname"
+      (let [resp (handler (request "/v4/nodes/foo.localdomain/facts/factname"))]
+        (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
+        (is (= [:wrap-with-parent-check''-:node
+                :extract-query'
+                :restrict-query-to-node'_foo.localdomain
+                :extract-query'
+                :restrict-query-to-active-nodes
+                :restrict-fact-query-to-name_factname
+                :restrict-query-to-facts
+                :query-handler]
+               (:fake-query-actions resp)))))
+    (testing "/v4/nodes/foo.localdomain/facts/factname/factvalue"
+      (let [resp (handler (request "/v4/nodes/foo.localdomain/facts/factname/factvalue"))]
+        (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
+        (is (= [:wrap-with-parent-check''-:node
+                :extract-query'
+                :restrict-query-to-node'_foo.localdomain
+                :extract-query'
+                :restrict-query-to-active-nodes
+                :restrict-fact-query-to-value_factvalue
+                :restrict-fact-query-to-name_factname
+                :restrict-query-to-facts
                 :query-handler]
                (:fake-query-actions resp)))))))
