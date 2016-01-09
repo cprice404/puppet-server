@@ -13,7 +13,7 @@
 
 (defn add-action-to-req
   [req action]
-  (update-in req [:fake-query-actions] conj action))
+  (update-in req [:fake-query-actions] (fnil conj []) action))
 
 (defn query-handler
   [version]
@@ -188,8 +188,8 @@
     (testing "/v4/nodes"
       (let [resp (handler (request "/v4/nodes"))]
         (is (= "QUERY HANDLER: STREAMING BODY" (:body resp)))
-        (is (= '(:query-handler
-                 :restrict-query-to-nodes
-                 :restrict-query-to-active-nodes
-                 :extract-query')
+        (is (= [:extract-query'
+                :restrict-query-to-active-nodes
+                :restrict-query-to-nodes
+                :query-handler]
                (:fake-query-actions resp)))))))
