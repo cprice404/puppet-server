@@ -102,42 +102,7 @@
                          (fn [{:keys [route-params] :as req}]
                            (restrict-fact-query-to-value (:value route-params) req))
                          restrict-query-to-active-nodes
-                         (extract-query' param-spec)))))
-     #_(comidi/ANY ["/" :fact] []
-                 )
-     #_(comidi/ANY ["/" :fact "/" :value] []
-                 (comp (query-handler version)
-                       #(restrict-query-to-entity "facts" %)
-                       (fn [{:keys [route-params] :as req}]
-                         (restrict-fact-query-to-name (:fact route-params) req))
-                       (fn [{:keys [route-params] :as req}]
-                         (restrict-fact-query-to-value (:value route-params) req))
-                       restrict-query-to-active-nodes
-                       (extract-query' param-spec))))
-    #_[""
-     {""
-      (comp (query-handler version)
-            #(restrict-query-to-entity "facts" %)
-            restrict-query-to-active-nodes
-            (extract-query' param-spec))
-
-      ["/" :fact]
-      {"" (comp (query-handler version)
-                #(restrict-query-to-entity "facts" %)
-                (fn [{:keys [route-params] :as req}]
-                  (restrict-fact-query-to-name (:fact route-params) req))
-                restrict-query-to-active-nodes
-                (extract-query' param-spec))
-
-       ["/" :value]
-       (comp (query-handler version)
-             #(restrict-query-to-entity "facts" %)
-             (fn [{:keys [route-params] :as req}]
-               (restrict-fact-query-to-name (:fact route-params) req))
-             (fn [{:keys [route-params] :as req}]
-               (restrict-fact-query-to-value (:value route-params) req))
-             restrict-query-to-active-nodes
-             (extract-query' param-spec))}}]))
+                         (extract-query' param-spec))))))))
 
 (schema/defn ^:always-validate node-app :- bidi-schema/RoutePair
   [version]
@@ -159,104 +124,18 @@
      (comidi/context ["/" :node "/facts"]
                      (cmdi/wrap-routes
                       (cmdi/wrap-routes (facts-app version)
-                                        #_["" (facts-app version)]
                                         (fn [handler]
                                           (comp handler
                                                 restrict-query-to-node'
                                                 (extract-query' param-spec))))
-                      #(wrap-with-parent-check'' % version :node :node)))
-     #_(comidi/ANY ["/" :node "/facts"] []
-                 (fn [req]
-                   (second
-                    (cmdi/wrap-routes
-                     (cmdi/wrap-routes (facts-app version)
-                                       #_["" (facts-app version)]
-                                       (fn [handler]
-                                         (comp handler
-                                               restrict-query-to-node'
-                                               (extract-query' param-spec))))
-                     #(wrap-with-parent-check'' % version :node :node)))))
-     )
-    #_[""
-     {"" (comp (query-handler version)
-               #(restrict-query-to-entity "nodes" %)
-               restrict-query-to-active-nodes
-               (extract-query' param-spec))
-
-      ["/" :node]
-      {"" (-> (fn [{:keys [globals route-params]}]
-                (node-status version
-                             (:node route-params)
-                             (select-keys globals [:scf-read-db :url-prefix :warn-experimental])))
-              ;; Being a singular item, querying and pagination don't really make
-              ;; sense here
-              (validate-query-params {}))
-
-       ["/facts"]
-       (second
-        (cmdi/wrap-routes
-         (cmdi/wrap-routes (facts-app version)
-                           #_["" (facts-app version)]
-                           (fn [handler]
-                             (comp handler
-                                   restrict-query-to-node'
-                                   (extract-query' param-spec))))
-         #(wrap-with-parent-check'' % version :node :node)))
-
-       #_["/resources"]
-       #_(second
-          (cmdi/wrap-routes
-           (cmdi/wrap-routes ["" (resources-app version)]
-                             (fn [handler]
-                               (comp handler
-                                     restrict-query-to-node'
-                                     (extract-query' param-spec))))
-           #(wrap-with-parent-check'' % version :node :node)))}}]))
+                      #(wrap-with-parent-check'' % version :node :node))))))
 
 (def v4-app
-  #_[""
-   {;"" (experimental-index-app version)
-    "/facts" (facts-app version)
-    ;"/edges" (comp (query-handler version)
-    ;               restrict-query-to-active-nodes
-    ;               #(restrict-query-to-entity "edges" %)
-    ;               (extract-query' {:optional query-params}))
-    ;"/factsets" (factset-app version)
-    ;"/fact-names" (fact-names-app version)
-    ;"/fact-contents"   (comp (query-handler version)
-    ;                         #(restrict-query-to-entity "fact_contents" %)
-    ;                         restrict-query-to-active-nodes
-    ;                         (extract-query' {:optional query-params}))
-    ;"/fact-paths" (create-paging-query-handler "fact_paths")
-
-    "/nodes" (node-app version)
-    ;"/environments" (environments-app version)
-    ;
-    ;
-    ;"/resources" (resources-app version)
-    ;"/catalogs" (catalog-app version)
-    ;"/events" (events-app version)
-    ;"/event-counts" (create-query-handler "event_counts" {:required ["summarize_by"]
-    ;                                                      :optional (concat ["counts_filter" "count_by"
-    ;                                                                         "distinct_resources" "distinct_start_time"
-    ;                                                                         "distinct_end_time"]
-    ;                                                                        query-params)})
-    ;"/aggregate-event-counts" (create-query-handler "aggregate_event_counts"
-    ;                                                {:required ["summarize_by"]
-    ;                                                 :optional ["query" "counts_filter" "count_by"
-    ;                                                            "distinct_resources" "distinct_start_time"
-    ;                                                            "distinct_end_time"]})
-    ;"/reports" (reports-app version)
-    }]
   (comidi/routes
    (comidi/context "/facts" (facts-app version))
    (comidi/context "/nodes" (node-app version))))
 
 (def routes
-  #_["" {;"/v1" [[true (refuse-retired-api "v1")]]
-       ;"/v2" [[true (refuse-retired-api "v2")]]
-       ;"/v3" [[true (refuse-retired-api "v3")]]
-       "/v4" v4-app}]
   (comidi/context "/v4" v4-app))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
