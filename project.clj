@@ -1,5 +1,5 @@
 (def clj-version "1.7.0")
-(def tk-version "1.1.3")
+(def tk-version "1.2.1-SNAPSHOT")
 (def tk-jetty-version "1.3.1")
 (def ks-version "1.1.0")
 (def ps-version "2.2.2-master-SNAPSHOT")
@@ -20,6 +20,7 @@
                  [puppetlabs/typesafe-config "0.1.4"]
                  [org.clojure/tools.macro "0.1.5"]
                  [com.fasterxml.jackson.core/jackson-core "2.5.4"]
+                 [org.clojure/tools.reader "1.0.0-alpha1"]
                  ;; end version conflict resolution dependencies
 
                  [cheshire "5.3.1"]
