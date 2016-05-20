@@ -1,0 +1,43 @@
+time ./run_jrubies.sh                                                                   2:10:09 PM
++ export JSON_GEM=json/pure
++ JSON_GEM=json/pure
++ ./json_benchmark.rb
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/pure
+              user     system      total        real
+warmup (100 runs): 62.850000   1.880000  64.730000 ( 47.218000)
+middle (1000 runs):546.790000   2.430000 549.220000 (462.843000)
+tail (100 runs): 54.560000   0.160000  54.720000 ( 45.753000)
+
++ export JSON_GEM=json/ext
++ JSON_GEM=json/ext
++ ./json_benchmark.rb
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/ext
+              user     system      total        real
+warmup (100 runs): 10.290000   0.350000  10.640000 (  7.157000)
+middle (1000 runs): 71.560000   0.430000  71.990000 ( 65.786000)
+tail (100 runs):  6.980000   0.050000   7.030000 (  6.533000)
+
++ set +x
++ export JSON_GEM=json/pure
++ JSON_GEM=json/pure
++ ./json_benchmark.rb
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: json/pure
+              user     system      total        real
+warmup (100 runs): 64.310000   2.370000  66.680000 ( 45.618293)
+middle (1000 runs):538.580000   2.530000 541.110000 (442.926254)
+tail (100 runs): 52.650000   0.210000  52.860000 ( 43.614009)
+
++ export JSON_GEM=json/ext
++ JSON_GEM=json/ext
++ ./json_benchmark.rb
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: json/ext
+              user     system      total        real
+warmup (100 runs): 10.850000   0.430000  11.280000 (  6.930292)
+middle (1000 runs): 71.000000   0.830000  71.830000 ( 64.748107)
+tail (100 runs):  7.380000   0.130000   7.510000 (  6.335430)
+
+./run_jrubies.sh  1517.40s user 12.63s system 122% cpu 20:51.92 total
