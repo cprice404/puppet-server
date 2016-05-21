@@ -4,32 +4,52 @@
     <artifactId>json.benchmark</artifactId>
     <version>0.0.1</version>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.jruby</groupId>
-            <artifactId>jruby-core</artifactId>
-            <version>1.7.20.1</version>
-            <exclusions>
-                <!--
-                ;; jffi and jnr-x86asm are explicit dependencies because,
-                 ;; in JRuby's poms, they are defined using version ranges,
-                 -->
-                <exclusion>
-                    <groupId>com.github.jnr</groupId>
-                    <artifactId>jffi</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.github.jnr</groupId>
-                    <artifactId>jnr-x86asm</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.jruby</groupId>
-            <artifactId>jruby-stdlib</artifactId>
-            <version>1.7.20.1</version>
-        </dependency>
-    </dependencies>
+    <profiles>
+        <profile>
+            <id>jruby17</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jruby</groupId>
+                    <artifactId>jruby-core</artifactId>
+                    <version>1.7.20.1</version>
+                    <exclusions>
+                        <!--
+                        ;; jffi and jnr-x86asm are explicit dependencies because,
+                         ;; in JRuby's poms, they are defined using version ranges,
+                         -->
+                        <exclusion>
+                            <groupId>com.github.jnr</groupId>
+                            <artifactId>jffi</artifactId>
+                        </exclusion>
+                        <exclusion>
+                            <groupId>com.github.jnr</groupId>
+                            <artifactId>jnr-x86asm</artifactId>
+                        </exclusion>
+                    </exclusions>
+                </dependency>
+                <dependency>
+                    <groupId>org.jruby</groupId>
+                    <artifactId>jruby-stdlib</artifactId>
+                    <version>1.7.20.1</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>jruby9k</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.jruby</groupId>
+                    <artifactId>jruby-core</artifactId>
+                    <version>9.1.0.0</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.jruby</groupId>
+                    <artifactId>jruby-stdlib</artifactId>
+                    <version>9.1.0.0</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>
