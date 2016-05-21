@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-set -e
 set -x
 
 rm maven_json_benchmark_output.txt
+
+set -e
 
 mvn clean
 mvn -P jruby17 compile
