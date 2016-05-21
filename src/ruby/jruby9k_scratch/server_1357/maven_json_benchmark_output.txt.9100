@@ -1,0 +1,60 @@
+Setting compile mode to 'off'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/pure
+              user     system      total        real
+warmup (100 runs): 71.237000   0.000000  71.237000 ( 71.237000)
+middle (1000 runs):692.897000   0.000000 692.897000 (692.897000)
+tail (100 runs): 69.907000   0.000000  69.907000 ( 69.907000)
+
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/pure
+              user     system      total        real
+warmup (100 runs): 46.348000   0.000000  46.348000 ( 46.347000)
+middle (1000 runs):448.405000   0.000000 448.405000 (448.405000)
+tail (100 runs): 44.886000   0.000000  44.886000 ( 44.887000)
+
+Setting compile mode to 'off'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/ext
+              user     system      total        real
+warmup (100 runs):  7.126000   0.000000   7.126000 (  7.125000)
+middle (1000 runs): 63.327000   0.000000  63.327000 ( 63.327000)
+tail (100 runs):  6.403000   0.000000   6.403000 (  6.403000)
+
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/ext
+              user     system      total        real
+warmup (100 runs):  7.007000   0.000000   7.007000 (  7.007000)
+middle (1000 runs): 64.919000   0.000000  64.919000 ( 64.919000)
+tail (100 runs):  6.408000   0.000000   6.408000 (  6.409000)
+
+Setting compile mode to 'off'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/pure
+              user     system      total        real
+warmup (100 runs):124.480000   1.760000 126.240000 (115.642949)
+middle (1000 runs):1202.010000   2.400000 1204.410000 (1157.892130)
+tail (100 runs):118.650000   0.120000 118.770000 (114.628867)
+
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/pure
+              user     system      total        real
+warmup (100 runs): 59.780000   0.890000  60.670000 ( 47.711508)
+middle (1000 runs):491.620000   1.120000 492.740000 (454.260102)
+tail (100 runs): 47.960000   0.150000  48.110000 ( 44.930262)
+
+Setting compile mode to 'off'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/ext
+              user     system      total        real
+warmup (100 runs): 10.540000   0.420000  10.960000 (  7.210477)
+middle (1000 runs): 67.200000   1.100000  68.300000 ( 66.425915)
+tail (100 runs):  6.670000   0.060000   6.730000 (  6.581398)
+
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/ext
+              user     system      total        real
+warmup (100 runs): 11.030000   0.340000  11.370000 (  7.200445)
+middle (1000 runs): 62.770000   1.130000  63.900000 ( 62.304790)
+tail (100 runs):  6.410000   0.070000   6.480000 (  6.309299)
+
