@@ -15,7 +15,10 @@ public class Jruby9kJsonBenchmarkDriver {
         ScriptingContainer sc = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
         sc.setOutput(writer);
         sc.setCompatVersion(CompatVersion.RUBY1_9);
-        sc.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+        if (args[1].equals("off")) {
+           writer.write("Setting compile mode to 'off'\n");
+           sc.setCompileMode(RubyInstanceConfig.CompileMode.OFF);
+        }
         sc.setEnvironment(new HashMap<String, String>() {{
             put("JSON_GEM", args[0]);
         }});
