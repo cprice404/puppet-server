@@ -21,5 +21,6 @@ public class Jruby9kJsonBenchmarkDriver {
         }});
         sc.runScriptlet(PathType.RELATIVE, "./json_benchmark.rb");
         writer.close();
+        sc.terminate();
     }
 }

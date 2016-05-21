@@ -1,7 +1,0 @@
-JRUBY VERSION: 9.1.0.0
-JSON VERSION: json/ext
-              user     system      total        real
-warmup (100 runs):  9.900000   0.430000  10.330000 (  6.995062)
-middle (1000 runs): 64.700000   1.210000  65.910000 ( 64.024562)
-tail (100 runs):  6.420000   0.080000   6.500000 (  6.384987)
-
