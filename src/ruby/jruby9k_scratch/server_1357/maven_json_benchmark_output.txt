@@ -1,60 +1,396 @@
-Setting compile mode to 'off'
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Leaving compileMode at default value.
+Using JSON gem: 'json/pure'
 JRUBY VERSION: 1.7.20.1
 JSON VERSION: json/pure
+COMPILE MODE: default
               user     system      total        real
-warmup (100 runs): 68.623000   0.000000  68.623000 ( 68.622000)
-middle (1000 runs):685.838000   0.000000 685.838000 (685.838000)
-tail (100 runs): 68.216000   0.000000  68.216000 ( 68.217000)
+warmup (100 runs): 49.786000   0.000000  49.786000 ( 49.784000)
+middle (1000 runs):466.085000   0.000000 466.085000 (466.085000)
+tail (100 runs): 46.653000   0.000000  46.653000 ( 46.654000)
 
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'json/pure'
 JRUBY VERSION: 1.7.20.1
 JSON VERSION: json/pure
+COMPILE MODE: jit
               user     system      total        real
-warmup (100 runs): 44.594000   0.000000  44.594000 ( 44.593000)
-middle (1000 runs):438.238000   0.000000 438.238000 (438.238000)
-tail (100 runs): 43.495000   0.000000  43.495000 ( 43.495000)
+warmup (100 runs): 48.894000   0.000000  48.894000 ( 48.893000)
+middle (1000 runs):460.092000   0.000000 460.092000 (460.092000)
+tail (100 runs): 45.942000   0.000000  45.942000 ( 45.942000)
 
-Setting compile mode to 'off'
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/pure
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs): 77.874000   0.000000  77.874000 ( 77.873000)
+middle (1000 runs):762.431000   0.000000 762.431000 (762.431000)
+tail (100 runs): 76.662000   0.000000  76.662000 ( 76.662000)
+
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/pure
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs): 49.587000   0.000000  49.587000 ( 49.586000)
+middle (1000 runs):473.858000   0.000000 473.858000 (473.857000)
+tail (100 runs): 47.767000   0.000000  47.767000 ( 47.767000)
+
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Leaving compileMode at default value.
+Using JSON gem: 'json/ext'
 JRUBY VERSION: 1.7.20.1
 JSON VERSION: json/ext
+COMPILE MODE: default
               user     system      total        real
-warmup (100 runs):  6.913000   0.000000   6.913000 (  6.913000)
-middle (1000 runs): 63.085000   0.000000  63.085000 ( 63.085000)
-tail (100 runs):  6.225000   0.000000   6.225000 (  6.225000)
+warmup (100 runs):  7.637000   0.000000   7.637000 (  7.636000)
+middle (1000 runs): 65.920000   0.000000  65.920000 ( 65.920000)
+tail (100 runs):  6.627000   0.000000   6.627000 (  6.627000)
 
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'json/ext'
 JRUBY VERSION: 1.7.20.1
 JSON VERSION: json/ext
+COMPILE MODE: jit
               user     system      total        real
-warmup (100 runs):  7.447000   0.000000   7.447000 (  7.446000)
-middle (1000 runs): 69.351000   0.000000  69.351000 ( 69.351000)
-tail (100 runs):  6.874000   0.000000   6.874000 (  6.874000)
+warmup (100 runs):  8.422000   0.000000   8.422000 (  8.420000)
+middle (1000 runs): 73.782000   0.000000  73.782000 ( 73.782000)
+tail (100 runs):  7.334000   0.000000   7.334000 (  7.334000)
 
-Setting compile mode to 'off'
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/ext
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs):  7.851000   0.000000   7.851000 (  7.849000)
+middle (1000 runs): 67.097000   0.000000  67.097000 ( 67.097000)
+tail (100 runs):  6.621000   0.000000   6.621000 (  6.621000)
+
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: json/ext
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs):  7.879000   0.000000   7.879000 (  7.877000)
+middle (1000 runs): 67.777000   0.000000  67.777000 ( 67.777000)
+tail (100 runs):  6.678000   0.000000   6.678000 (  6.678000)
+
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Leaving compileMode at default value.
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: jrjackson
+COMPILE MODE: default
+              user     system      total        real
+warmup (100 runs):  4.774000   0.000000   4.774000 (  4.772000)
+middle (1000 runs): 36.781000   0.000000  36.781000 ( 36.781000)
+tail (100 runs):  3.662000   0.000000   3.662000 (  3.662000)
+
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: jrjackson
+COMPILE MODE: jit
+              user     system      total        real
+warmup (100 runs):  4.749000   0.000000   4.749000 (  4.748000)
+middle (1000 runs): 36.768000   0.000000  36.768000 ( 36.768000)
+tail (100 runs):  3.617000   0.000000   3.617000 (  3.617000)
+
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: jrjackson
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs):  4.916000   0.000000   4.916000 (  4.915000)
+middle (1000 runs): 38.354000   0.000000  38.354000 ( 38.354000)
+tail (100 runs):  3.814000   0.000000   3.814000 (  3.814000)
+
+Detected JRuby version 1.7.x, setting compatVersion 1.9.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 1.7.20.1
+JSON VERSION: jrjackson
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs):  4.818000   0.000000   4.818000 (  4.816000)
+middle (1000 runs): 36.142000   0.000000  36.142000 ( 36.141000)
+tail (100 runs):  3.656000   0.000000   3.656000 (  3.656000)
+
+Detected JRuby version 9k, skipping compatVersion.
+Leaving compileMode at default value.
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/pure
+COMPILE MODE: default
+              user     system      total        real
+warmup (100 runs): 67.810000   0.840000  68.650000 ( 54.176041)
+middle (1000 runs):526.580000   1.540000 528.120000 (507.990939)
+tail (100 runs): 51.650000   0.110000  51.760000 ( 50.012893)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/pure
+COMPILE MODE: jit
+              user     system      total        real
+warmup (100 runs): 67.660000   0.750000  68.410000 ( 54.524516)
+middle (1000 runs):536.020000   1.490000 537.510000 (518.473304)
+tail (100 runs): 52.530000   0.140000  52.670000 ( 51.019594)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/pure
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs):133.880000   0.960000 134.840000 (123.395106)
+middle (1000 runs):1236.560000   1.880000 1238.440000 (1210.745629)
+tail (100 runs):123.250000   0.140000 123.390000 (121.163010)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/pure
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs): 70.600000   0.650000  71.250000 ( 57.081000)
+middle (1000 runs):552.830000   1.410000 554.240000 (535.546709)
+tail (100 runs): 53.470000   0.100000  53.570000 ( 52.235897)
+
+Detected JRuby version 9k, skipping compatVersion.
+Leaving compileMode at default value.
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/ext
+COMPILE MODE: default
+              user     system      total        real
+warmup (100 runs): 11.590000   0.200000  11.790000 (  8.002652)
+middle (1000 runs): 70.120000   0.860000  70.980000 ( 69.174865)
+tail (100 runs):  7.270000   0.100000   7.370000 (  6.942302)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/ext
+COMPILE MODE: jit
+              user     system      total        real
+warmup (100 runs): 12.920000   0.320000  13.240000 (  8.299722)
+middle (1000 runs): 68.900000   0.880000  69.780000 ( 68.286689)
+tail (100 runs):  6.800000   0.100000   6.900000 (  6.818597)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/ext
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs): 11.640000   0.290000  11.930000 (  8.066186)
+middle (1000 runs): 69.300000   0.870000  70.170000 ( 68.650283)
+tail (100 runs):  7.200000   0.060000   7.260000 (  6.848168)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: json/ext
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs): 11.820000   0.170000  11.990000 (  8.136412)
+middle (1000 runs): 68.180000   0.880000  69.060000 ( 67.714730)
+tail (100 runs):  6.680000   0.080000   6.760000 (  6.675078)
+
+Detected JRuby version 9k, skipping compatVersion.
+Leaving compileMode at default value.
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: jrjackson
+COMPILE MODE: default
+              user     system      total        real
+warmup (100 runs):  8.770000   0.250000   9.020000 (  5.256109)
+middle (1000 runs): 40.930000   0.930000  41.860000 ( 40.409984)
+tail (100 runs):  3.990000   0.110000   4.100000 (  3.993971)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: jrjackson
+COMPILE MODE: jit
+              user     system      total        real
+warmup (100 runs):  9.510000   0.290000   9.800000 (  5.397079)
+middle (1000 runs): 38.740000   0.960000  39.700000 ( 38.532102)
+tail (100 runs):  3.960000   0.070000   4.030000 (  3.792105)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: jrjackson
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs):  9.010000   0.260000   9.270000 (  5.127556)
+middle (1000 runs): 40.720000   0.900000  41.620000 ( 40.282821)
+tail (100 runs):  3.950000   0.080000   4.030000 (  3.922754)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.0.0
+JSON VERSION: jrjackson
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs):  8.870000   0.260000   9.130000 (  5.302811)
+middle (1000 runs): 39.750000   0.950000  40.700000 ( 39.412908)
+tail (100 runs):  3.920000   0.080000   4.000000 (  3.928780)
+
+Detected JRuby version 9k, skipping compatVersion.
+Leaving compileMode at default value.
+Using JSON gem: 'json/pure'
 JRUBY VERSION: 9.1.1.0
 JSON VERSION: json/pure
+COMPILE MODE: default
               user     system      total        real
-warmup (100 runs):125.730000   0.950000 126.680000 (117.127442)
-middle (1000 runs):1179.990000   2.010000 1182.000000 (1137.112471)
-tail (100 runs):117.910000   0.500000 118.410000 (113.878695)
+warmup (100 runs): 66.300000   0.390000  66.690000 ( 53.861976)
+middle (1000 runs):530.040000   1.250000 531.290000 (512.264704)
+tail (100 runs): 52.860000   0.090000  52.950000 ( 50.766860)
 
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'json/pure'
 JRUBY VERSION: 9.1.1.0
 JSON VERSION: json/pure
+COMPILE MODE: jit
               user     system      total        real
-warmup (100 runs): 57.210000   1.040000  58.250000 ( 46.550869)
-middle (1000 runs):494.840000   1.050000 495.890000 (457.326623)
-tail (100 runs): 47.780000   0.070000  47.850000 ( 44.521791)
+warmup (100 runs): 67.820000   0.430000  68.250000 ( 55.347622)
+middle (1000 runs):541.090000   1.220000 542.310000 (523.082740)
+tail (100 runs): 53.560000   0.110000  53.670000 ( 52.047701)
 
-Setting compile mode to 'off'
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: json/pure
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs):141.000000   0.530000 141.530000 (130.629619)
+middle (1000 runs):1297.740000   1.800000 1299.540000 (1272.132289)
+tail (100 runs):129.140000   0.210000 129.350000 (127.259061)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'json/pure'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: json/pure
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs): 66.590000   0.270000  66.860000 ( 54.072541)
+middle (1000 runs):528.520000   1.530000 530.050000 (510.630387)
+tail (100 runs): 52.310000   0.130000  52.440000 ( 50.431046)
+
+Detected JRuby version 9k, skipping compatVersion.
+Leaving compileMode at default value.
+Using JSON gem: 'json/ext'
 JRUBY VERSION: 9.1.1.0
 JSON VERSION: json/ext
+COMPILE MODE: default
               user     system      total        real
-warmup (100 runs): 10.200000   0.710000  10.910000 (  7.405088)
-middle (1000 runs): 68.880000   1.290000  70.170000 ( 68.127059)
-tail (100 runs):  6.910000   0.080000   6.990000 (  6.891114)
+warmup (100 runs): 11.870000   0.220000  12.090000 (  8.179104)
+middle (1000 runs): 68.580000   0.940000  69.520000 ( 68.061122)
+tail (100 runs):  6.800000   0.080000   6.880000 (  6.806208)
 
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'json/ext'
 JRUBY VERSION: 9.1.1.0
 JSON VERSION: json/ext
+COMPILE MODE: jit
               user     system      total        real
-warmup (100 runs): 10.340000   1.040000  11.380000 (  7.227147)
-middle (1000 runs): 63.730000   1.180000  64.910000 ( 62.950066)
-tail (100 runs):  6.370000   0.080000   6.450000 (  6.326125)
+warmup (100 runs): 12.040000   0.180000  12.220000 (  8.232855)
+middle (1000 runs): 71.850000   0.830000  72.680000 ( 70.771518)
+tail (100 runs):  7.650000   0.070000   7.720000 (  7.309100)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: json/ext
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs): 11.700000   0.220000  11.920000 (  8.267581)
+middle (1000 runs): 73.390000   1.040000  74.430000 ( 72.488652)
+tail (100 runs):  7.250000   0.100000   7.350000 (  7.244745)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'json/ext'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: json/ext
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs): 12.540000   0.310000  12.850000 (  8.011624)
+middle (1000 runs): 69.550000   0.900000  70.450000 ( 68.926120)
+tail (100 runs):  7.380000   0.090000   7.470000 (  7.034346)
+
+Detected JRuby version 9k, skipping compatVersion.
+Leaving compileMode at default value.
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: jrjackson
+COMPILE MODE: default
+              user     system      total        real
+warmup (100 runs):  8.430000   0.270000   8.700000 (  5.189057)
+middle (1000 runs): 40.290000   0.930000  41.220000 ( 40.091742)
+tail (100 runs):  4.030000   0.060000   4.090000 (  3.958584)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'JIT'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: jrjackson
+COMPILE MODE: jit
+              user     system      total        real
+warmup (100 runs):  8.630000   0.300000   8.930000 (  5.202981)
+middle (1000 runs): 40.290000   0.910000  41.200000 ( 39.860546)
+tail (100 runs):  3.910000   0.120000   4.030000 (  3.936023)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'OFF'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: jrjackson
+COMPILE MODE: off
+              user     system      total        real
+warmup (100 runs):  8.740000   0.200000   8.940000 (  5.283115)
+middle (1000 runs): 42.630000   0.900000  43.530000 ( 42.287775)
+tail (100 runs):  4.280000   0.080000   4.360000 (  4.288056)
+
+Detected JRuby version 9k, skipping compatVersion.
+Setting compileMode to: 'FORCE'
+Using JSON gem: 'jrjackson'
+JRUBY VERSION: 9.1.1.0
+JSON VERSION: jrjackson
+COMPILE MODE: force
+              user     system      total        real
+warmup (100 runs):  8.210000   0.220000   8.430000 (  5.100555)
+middle (1000 runs): 40.350000   1.000000  41.350000 ( 39.988278)
+tail (100 runs):  3.900000   0.100000   4.000000 (  3.909441)
 
