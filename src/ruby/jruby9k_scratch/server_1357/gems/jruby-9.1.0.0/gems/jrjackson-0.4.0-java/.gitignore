@@ -1,0 +1,10 @@
+Gemfile.lock
+pkg
+target
+Rakefile.old
+.idea
+*.iml
+
+linked
+/libyjpagent.so
+/.project
