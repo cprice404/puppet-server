@@ -3,7 +3,12 @@
             [clojure.java.io :as io])
   (:import (java.io FileReader FileInputStream FileOutputStream FileWriter)
            (org.apache.commons.io IOUtils)
-           (org.apache.commons.lang StringUtils StringEscapeUtils)))
+           (org.apache.commons.lang StringUtils StringEscapeUtils)
+           (com.fasterxml.jackson.core JsonFactory JsonGenerator$Feature)
+           (com.fasterxml.jackson.databind ObjectMapper)
+           (com.fasterxml.jackson.core.json UTF8JsonGenerator)
+           (com.fasterxml.jackson.core.io IOContext)
+           (com.fasterxml.jackson.core.util BufferRecycler)))
 
 (def binary-catalog-path "binary_catalog.pson")
 
@@ -75,6 +80,42 @@
           (if-not (= -1 next-byte)
             (recur next-byte (inc ct))))))))
 
+(defn convert-unicode-to-binary
+  [reader out]
+  (loop [b (.read reader)
+         i 0]
+    (println "READ BYTE" i "from raw jpeg file")
+    (if-not (= -1 b)
+      (do
+        (println "not at end")
+        (if (= 92 b)
+          (do
+            (println "Found a backslash, looking for a 'u'.")
+            (let [next-byte (.read reader)]
+              ;; Probably better here to just duplicate the `unescapeJava` method
+              ;; from StringEscapeUtils and port it to work off of bytes directly
+              (if (= 117 next-byte)
+                (do
+                  (println "Found a 'u', reading unicode char.")
+                  (.write out (.getBytes
+                               (StringEscapeUtils/unescapeJava
+                                (String. (byte-array [92
+                                                      117
+                                                      (.read reader)
+                                                      (.read reader)
+                                                      (.read reader)
+                                                      (.read reader)])))
+                               "UTF-8")))
+                (do
+                  (println "Not a 'u', writing backslash and other byte")
+                  (.write out (.getBytes
+                               (StringEscapeUtils/unescapeJava
+                                (String. (byte-array [92 next-byte])))))))))
+          (do
+            (println "not a backslash, writing byte")
+            (.write out b)))
+        (recur (.read reader) (inc i))))))
+
 (defn extract-image-from-binary-catalog-stream
   []
   (let [reader (FileInputStream. ^String binary-catalog-path)]
@@ -91,37 +132,7 @@
       (.close fileoutput)))
   (let [reader (FileInputStream. "./foob.jpeg.raw")
         out (FileOutputStream. "./foob.jpeg")]
-    (loop [b (.read reader)
-           i 0]
-      (println "READ BYTE" i "from raw jpeg file")
-      (if-not (= -1 b)
-        (do
-          (println "not at end")
-          (if (= 92 b)
-            (do
-              (println "Found a backslash, looking for a 'u'.")
-              (let [next-byte (.read reader)]
-                (if (= 117 next-byte)
-                  (do
-                    (println "Found a 'u', reading unicode char.")
-                    (.write out (.getBytes
-                                 (StringEscapeUtils/unescapeJava
-                                  (String. (byte-array [92
-                                                        117
-                                                        (.read reader)
-                                                        (.read reader)
-                                                        (.read reader)
-                                                        (.read reader)])))
-                                 "UTF-8")))
-                  (do
-                    (println "Not a 'u', writing backslash and other byte")
-                    (.write out (.getBytes
-                                 (StringEscapeUtils/unescapeJava
-                                  (String. (byte-array [92 next-byte])))))))))
-            (do
-              (println "not a backslash, writing byte")
-              (.write out b)))
-          (recur (.read reader) (inc i)))))
+    (convert-unicode-to-binary reader out)
     (.close reader)
     (.close out)))
 
@@ -135,7 +146,34 @@
           (println "read byte #" ct (String. (byte-array [b]) "UTF-8"))
           (recur (.read reader) (inc ct)))))))
 
-(extract-image-from-binary-catalog-stream)
+#_(extract-image-from-binary-catalog-stream)
 #_(count-bytes-in-file)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn generate-binary-map-cheshire
+  []
+  (let [m {"content" (slurp "err_orig.jpeg")}
+        serialized (json/generate-string m)]
+    (spit "binary_map_cheshire.pson" serialized)))
+
+(defn generate-binary-map-jackson
+  []
+  (let [outstream (FileOutputStream. "binary_map_jackson.pson")
+        m {"content" (slurp "err_orig.jpeg")}
+        ;json-factory (JsonFactory.)
+        ;generator (.createGenerator json-factory outstream)
+        io-context (IOContext. (BufferRecycler.) outstream false)
+        generator (UTF8JsonGenerator.
+                   io-context
+                   (JsonGenerator$Feature/collectDefaults)
+                   nil
+                   outstream)
+        om (ObjectMapper.)]
+    (.writeValue om generator m)
+    (.close outstream)))
+
+(generate-binary-map-cheshire)
+(generate-binary-map-jackson)
 
 (println "FIN")
