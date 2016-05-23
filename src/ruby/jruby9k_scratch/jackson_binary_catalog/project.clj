@@ -2,7 +2,9 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [cheshire "5.6.1"]
                  [commons-io "2.5"]
-                 [commons-lang "2.6"]]
+                 [commons-lang "2.6"]
+                 [com.fasterxml.jackson.core/jackson-databind "2.7.3"]
+                 ]
 
   :pedantic? :abort
 
