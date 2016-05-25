@@ -13,7 +13,8 @@
            (java.util.concurrent TimeUnit)
            (clojure.lang IFn)
            (com.puppetlabs.puppetserver.jruby ScriptingContainer)
-           (java.io InputStream PrintStream)))
+           (java.io InputStream PrintStream)
+           (org.jruby.util JarResource JarCache$JarIndex)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Definitions
@@ -174,12 +175,36 @@
   {:pool (instantiate-free-pool size)
    :size size})
 
+(defn purge-class-loader-jars!
+  [jruby-puppet]
+  (doseq [jar-url (-> jruby-puppet
+                      (.getRuntime)
+                      (.getJRubyClassLoader)
+                      (.getURLs))]
+    (let [jar-url-path (.getPath jar-url)
+          jar-cache-field (.getDeclaredField JarResource
+                                             "jarCache")
+          _ (.setAccessible jar-cache-field true)
+          jar-cache (.get jar-cache-field JarResource)
+          index-cache-field (.getDeclaredField (.getClass jar-cache)
+                                               "indexCache")
+          _ (.setAccessible index-cache-field true)
+          index-cache (.get index-cache-field jar-cache)]
+      (if-let [jar-index (.get index-cache jar-url-path)]
+        (let [jar-index-release-method (.getMethod
+                                        JarCache$JarIndex "release" nil)]
+          (log/infof "* Cleaning up %s..." jar-url-path)
+          (.setAccessible jar-index-release-method true)
+          (.remove index-cache jar-url-path)
+          (.invoke jar-index-release-method jar-index nil))))))
+
 (schema/defn ^:always-validate
   cleanup-pool-instance!
   "Cleans up and cleanly terminates a JRubyPuppet instance and removes it from the pool."
   [{:keys [scripting-container jruby-puppet pool] :as instance} :- JRubyPuppetInstance]
   (.unregister pool instance)
   (.terminate jruby-puppet)
+  (purge-class-loader-jars! jruby-puppet)
   (.terminate scripting-container)
   (log/infof "Cleaned up old JRuby instance with id %s." (:id instance)))
 
