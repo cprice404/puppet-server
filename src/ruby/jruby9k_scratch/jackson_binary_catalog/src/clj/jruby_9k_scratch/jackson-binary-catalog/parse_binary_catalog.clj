@@ -173,7 +173,7 @@
     (.writeValue om generator m)
     (.close outstream)))
 
-(generate-binary-map-cheshire)
+;(generate-binary-map-cheshire)
 (generate-binary-map-jackson)
 
 (println "FIN")
