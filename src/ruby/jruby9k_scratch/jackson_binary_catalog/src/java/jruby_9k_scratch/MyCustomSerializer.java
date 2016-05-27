@@ -1,30 +1,39 @@
 package jruby_9k_scratch;
 
-import com.fasterxml.jackson.core.*;
+import com.fasterxml.jackson.core.Base64Variant;
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.core.ObjectCodec;
+import com.fasterxml.jackson.core.SerializableString;
+import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.core.io.CharTypes;
 import com.fasterxml.jackson.core.io.IOContext;
-import com.fasterxml.jackson.core.json.ByteSourceJsonBootstrapper;
 import com.fasterxml.jackson.core.json.UTF8JsonGenerator;
 import com.fasterxml.jackson.core.json.UTF8StreamJsonParser;
 import com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer;
-import com.fasterxml.jackson.core.sym.CharsToNameCanonicalizer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
-import com.fasterxml.jackson.databind.deser.std.StringDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -36,128 +45,11 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
 
     public static class MyUTF8StreamJsonParser extends UTF8StreamJsonParser {
 
-        // This is the main input-code lookup table, fetched eagerly
-        private final static int[] _icUTF8 = CharTypes.getInputCodeUtf8();
-
         public MyUTF8StreamJsonParser(IOContext ctxt, int features, InputStream in, ObjectCodec codec, ByteQuadsCanonicalizer sym, byte[] inputBuffer, int start, int end, boolean bufferRecyclable) {
             super(ctxt, features, in, codec, sym, inputBuffer, start, end, bufferRecyclable);
         }
 
-        private final void _myFinishString2(char[] outBuf, int outPtr)
-                throws IOException
-        {
-            int c;
-
-            // Here we do want to do full decoding, hence:
-            final int[] codes = _icUTF8;
-            final byte[] inputBuffer = _inputBuffer;
-
-            main_loop:
-            while (true) {
-                // Then the tight ASCII non-funny-char loop:
-                ascii_loop:
-                while (true) {
-                    int ptr = _inputPtr;
-                    if (ptr >= _inputEnd) {
-                        loadMoreGuaranteed();
-                        ptr = _inputPtr;
-                    }
-                    if (outPtr >= outBuf.length) {
-                        outBuf = _textBuffer.finishCurrentSegment();
-                        outPtr = 0;
-                    }
-                    final int max = Math.min(_inputEnd, (ptr + (outBuf.length - outPtr)));
-                    while (ptr < max) {
-                        c = (int) inputBuffer[ptr++] & 0xFF;
-                        if (codes[c] != 0) {
-                            _inputPtr = ptr;
-                            break ascii_loop;
-                        }
-                        outBuf[outPtr++] = (char) c;
-                    }
-                    _inputPtr = ptr;
-                }
-                // Ok: end marker, escape or multi-byte?
-                if (c == INT_QUOTE) {
-                    break main_loop;
-                }
-
-                switch (codes[c]) {
-                    case 1: // backslash
-                        c = _decodeEscaped();
-                        break;
-//                    case 2: // 2-byte UTF
-//                        c = _decodeUtf8_2(c);
-//                        break;
-//                    case 3: // 3-byte UTF
-//                        if ((_inputEnd - _inputPtr) >= 2) {
-//                            c = _decodeUtf8_3fast(c);
-//                        } else {
-//                            c = _decodeUtf8_3(c);
-//                        }
-//                        break;
-//                    case 4: // 4-byte UTF
-//                        c = _decodeUtf8_4(c);
-//                        // Let's add first part right away:
-//                        outBuf[outPtr++] = (char) (0xD800 | (c >> 10));
-//                        if (outPtr >= outBuf.length) {
-//                            outBuf = _textBuffer.finishCurrentSegment();
-//                            outPtr = 0;
-//                        }
-//                        c = 0xDC00 | (c & 0x3FF);
-//                        // And let the other char output down below
-//                        break;
-                    default:
-                        if (c < INT_SPACE) {
-                            // As per [JACKSON-208], call can now return:
-                            _throwUnquotedSpace(c, "string value");
-                        } else {
-                            // Is this good enough error message?
-                            _reportInvalidChar(c);
-                        }
-                }
-                // Need more room?
-                if (outPtr >= outBuf.length) {
-                    outBuf = _textBuffer.finishCurrentSegment();
-                    outPtr = 0;
-                }
-                // Ok, let's add char to output:
-                outBuf[outPtr++] = (char) c;
-            }
-            _textBuffer.setCurrentLength(outPtr);
-        }
-
         private String _myReturnString() throws IOException {
-            // First, single tight loop for ASCII content, not split across input buffer boundary:
-//            int ptr = _inputPtr;
-//            if (ptr >= _inputEnd) {
-//                loadMoreGuaranteed();
-//                ptr = _inputPtr;
-//            }
-//            int outPtr = 0;
-//            char[] outBuf = _textBuffer.emptyAndGetCurrentSegment();
-//            final int[] codes = _icUTF8;
-//
-//            final int max = Math.min(_inputEnd, (ptr + outBuf.length));
-//            final byte[] inputBuffer = _inputBuffer;
-//            while (ptr < max) {
-//                int c = (int) inputBuffer[ptr] & 0xFF;
-//                if (codes[c] != 0) {
-//                    if (c == INT_QUOTE) {
-//                        _inputPtr = ptr+1;
-//                        return _textBuffer.setCurrentAndReturn(outPtr);
-//                    }
-//                    break;
-//                }
-//                ++ptr;
-//                outBuf[outPtr++] = (char) c;
-//            }
-////            throw new IllegalStateException("Not supported.");
-//            _inputPtr = ptr;
-//            _myFinishString2(outBuf, outPtr);
-//            return _textBuffer.contentsAsString();
-
-
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte b;
             boolean isPrevCharBackslash = false;
@@ -169,20 +61,6 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
                     loadMoreGuaranteed();
                     ptr = _inputPtr;
                 }
-//                if (outPtr >= outBuf.length) {
-//                    outBuf = _textBuffer.finishCurrentSegment();
-//                    outPtr = 0;
-//                }
-//                final int max = Math.min(_inputEnd, (ptr + (outBuf.length - outPtr)));
-//                while (ptr < max) {
-//                    c = (int) inputBuffer[ptr++] & 0xFF;
-//                    if (codes[c] != 0) {
-//                        _inputPtr = ptr;
-//                        break ascii_loop;
-//                    }
-//                    outBuf[outPtr++] = (char) c;
-//                }
-//                _inputPtr = ptr;
                 while (ptr < _inputEnd) {
                     b = _inputBuffer[ptr++];
 
@@ -203,12 +81,6 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
             }
 
             return IOUtils.toString(out.toInputStream(), "UTF-8");
-//            // Ok: end marker, escape or multi-byte?
-//            if (c == INT_QUOTE) {
-//                break main_loop;
-//            }
-//
-
         }
 
 
@@ -242,35 +114,6 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
                 return p.getText();
             }
             throw new IllegalStateException("I dunno why my string deserializer is being called for something that is not a string!");
-//            JsonToken t = p.getCurrentToken();
-//            // // [WTF databind#381]
-//            if ((t == JsonToken.START_ARRAY) && ctxt.isEnabled(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)) {
-//                p.nextToken();
-//                final String parsed = _parseString(p, ctxt);
-//                if (p.nextToken() != JsonToken.END_ARRAY) {
-//                    throw ctxt.wrongTokenException(p, JsonToken.END_ARRAY,
-//                            "Attempted to unwrap single value array for single 'String' value but there was more than a single value in the array");
-//                }
-//                return parsed;
-//            }
-//            // need to gracefully handle byte[] data, as base64
-//            if (t == JsonToken.VALUE_EMBEDDED_OBJECT) {
-//                Object ob = p.getEmbeddedObject();
-//                if (ob == null) {
-//                    return null;
-//                }
-//                if (ob instanceof byte[]) {
-//                    return ctxt.getBase64Variant().encode((byte[]) ob, false);
-//                }
-//                // otherwise, try conversion using toString()...
-//                return ob.toString();
-//            }
-//            // allow coercions for other scalar types
-//            String text = p.getValueAsString();
-//            if (text != null) {
-//                return text;
-//            }
-//            throw ctxt.mappingException(_valueClass, p.getCurrentToken());
         }
     }
 
@@ -444,10 +287,6 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
             IOContext ctxt = _createContext(in, false);
             int inputEnd = 0;
             int inputPtr = 0;
-//            return new MyByteSourceJsonBootstrapper(ctxt,
-//                    _decorate(in, ctxt)).constructParser(_parserFeatures,
-//                    _objectCodec, _byteSymbolCanonicalizer, _rootCharSymbols,
-//                    _factoryFeatures);
 
             byte[] inputBuffer = ctxt.allocReadIOBuffer();
 
