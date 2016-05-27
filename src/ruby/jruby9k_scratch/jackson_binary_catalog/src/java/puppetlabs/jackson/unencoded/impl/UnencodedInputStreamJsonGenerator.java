@@ -12,6 +12,7 @@ import java.io.OutputStream;
 
 public class UnencodedInputStreamJsonGenerator extends UTF8JsonGenerator {
     private final static byte BYTE_QUOTE = (byte) '"';
+    protected final static int BYTE_BACKSLASH = (byte) '\\';
 
     public UnencodedInputStreamJsonGenerator(IOContext ctxt, int features, ObjectCodec codec, OutputStream out) {
         super(ctxt, features, codec, out);
@@ -60,6 +61,9 @@ public class UnencodedInputStreamJsonGenerator extends UTF8JsonGenerator {
         int inputEnd = 0;
         int bytesRead = 0;
 
+        boolean isPrevCharBackslash = false;
+        byte b;
+
         while (true) {
             if (inputPtr >= readBuffer.length) { // need to load more
                 inputPtr = 0;
@@ -70,8 +74,18 @@ public class UnencodedInputStreamJsonGenerator extends UTF8JsonGenerator {
                 if (_outputTail >= _outputEnd) {
                     _flushBuffer();
                 }
-                _outputBuffer[_outputTail++] = readBuffer[inputPtr];
+                b = readBuffer[inputPtr];
+                if ((!isPrevCharBackslash) && (b == BYTE_QUOTE)) {
+                    throw new IllegalStateException("Derp!  You must escape any quote characters in your stream before it can be serialized by UnencodedInputStreamJsonGenerator.");
+                }
+                _outputBuffer[_outputTail++] = b;
                 inputPtr++;
+
+                if (b == BYTE_BACKSLASH) {
+                    isPrevCharBackslash = true;
+                } else {
+                    isPrevCharBackslash = false;
+                }
             }
             if (inputEnd < readBuffer.length) {
                 break;
