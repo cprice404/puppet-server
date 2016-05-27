@@ -3,7 +3,8 @@
   (:import (java.io FileInputStream InputStream ByteArrayInputStream)
            (org.apache.commons.io.output ByteArrayOutputStream)
            (puppetlabs.jackson.unencoded UnencodedInputStreamJsonMapper)
-           (org.apache.commons.io IOUtils)))
+           (org.apache.commons.io IOUtils)
+           (com.fasterxml.jackson.databind JsonMappingException)))
 
 (defn roundtrip
   [test-file-name]
@@ -36,4 +37,12 @@
     (let [{:keys [deserialized input-bytes]} (roundtrip "multi-line-ascii.txt")]
       (is (instance? InputStream (.get deserialized "foo")))
       (is (instance? InputStream (.get deserialized "file-contents")))
-      (is (bytes-match? input-bytes (.get deserialized "file-contents"))))))
+      (is (bytes-match? input-bytes (.get deserialized "file-contents")))))
+
+  (testing "can't serialize a stream that contains unescaped quotes"
+    (is (thrown-with-msg? JsonMappingException #"Derp!  You must escape any quote characters"
+          (roundtrip "single-line-ascii-with-quote.txt"))))
+
+  (testing "can't serialize a stream that contains unescaped quotes"
+    (is (thrown-with-msg? JsonMappingException #"Derp!  You must escape any quote characters"
+                          (roundtrip "foo.jpeg")))))
