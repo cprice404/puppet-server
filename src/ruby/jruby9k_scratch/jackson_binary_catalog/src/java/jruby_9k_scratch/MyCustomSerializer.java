@@ -18,10 +18,12 @@ import com.fasterxml.jackson.core.sym.ByteQuadsCanonicalizer;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.MappingJsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleDeserializers;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import org.apache.commons.io.IOUtils;
@@ -41,6 +43,28 @@ import java.util.Map;
 public class MyCustomSerializer extends StdScalarSerializer<String> {
     public MyCustomSerializer() {
         super(String.class);
+    }
+
+//    public static class NotActuallyAString extends String {
+//
+//        @Override
+//        public int read() throws IOException {
+//            throw new IllegalStateException("Not implemented.");
+//        }
+//    }
+
+    public static class LessSimpleModule extends SimpleModule {
+        public LessSimpleModule(String name, Version version) {
+            super(name, version);
+        }
+
+        public LessSimpleModule addDeserializerWithoutTypeCheck(Class type, JsonDeserializer deser) {
+            if (_deserializers == null) {
+                _deserializers = new SimpleDeserializers();
+            }
+            _deserializers.addDeserializer(type, deser);
+            return this;
+        }
     }
 
     public static class MyUTF8StreamJsonParser extends UTF8StreamJsonParser {
@@ -96,7 +120,7 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
         }
     }
 
-    public static class MyCustomDeserializer extends StdScalarDeserializer<String> {
+    public static class MyCustomDeserializer extends StdScalarDeserializer<InputStream> {
         protected MyCustomDeserializer() {
             super(String.class);
         }
@@ -106,13 +130,14 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
         public boolean isCachable() { return true; }
 
         @Override
-        public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException
+        public InputStream deserialize(JsonParser p, DeserializationContext ctxt) throws IOException
         {
             if (p.hasToken(JsonToken.VALUE_STRING)) {
 //                return p.getBinaryValue();
-                return IOUtils.toString(
-                        ((MyUTF8StreamJsonParser)p).getBytesAsInputStream(),
-                        "UTF-8");
+                return ((MyUTF8StreamJsonParser)p).getBytesAsInputStream();
+//                return IOUtils.toString(
+//                        ((MyUTF8StreamJsonParser)p).getBytesAsInputStream(),
+//                        "UTF-8");
             }
             throw new IllegalStateException("I dunno why my string deserializer is being called for something that is not a string!");
         }
@@ -312,9 +337,9 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
 
     public static void main(String[] args) throws IOException {
         ObjectMapper mapper = new ObjectMapper(new MyMappingJsonFactory());
-        SimpleModule testModule = new SimpleModule("MyModule", new Version(1, 0, 0, null, "foo", "foo"));
+        LessSimpleModule testModule = new LessSimpleModule("MyModule", new Version(1, 0, 0, null, "foo", "foo"));
         testModule.addSerializer(new MyCustomSerializer()); // assuming serializer declares correct class to bind to
-        testModule.addDeserializer(String.class, new MyCustomDeserializer());
+        testModule.addDeserializerWithoutTypeCheck(String.class, new MyCustomDeserializer());
         mapper.registerModule(testModule);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -331,11 +356,13 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
         Map<String, Object> wtf = mapper.readValue(in, new TypeReference<Map<String, Object>>(){});
         System.out.println("Read map:" + wtf.keySet());
         System.out.println("map[foo].class:" + wtf.get("foo").getClass());
-        System.out.println("map[foo].length:" + ((String)wtf.get("foo")).length());
+//        System.out.println("map[foo].length:" + ((String)wtf.get("foo")).length());
+        System.out.println("map[foo].length:" + IOUtils.toString((InputStream)wtf.get("foo"), "UTF-8").length());
         System.out.println("map[mappy].class:" + wtf.get("mappy").getClass());
         System.out.println("map[mappy].keys:" + ((Map)wtf.get("mappy")).keySet());
         System.out.println("map[mappy][nesty].class:" + ((Map)wtf.get("mappy")).get("nesty").getClass());
-        System.out.println("map[foo].length:" + ((String)((Map)wtf.get("mappy")).get("nesty")).length());
+//        System.out.println("map[foo].length:" + ((String)((Map)wtf.get("mappy")).get("nesty")).length());
+        System.out.println("map[foo].length:" + IOUtils.toString((InputStream)((Map)wtf.get("mappy")).get("nesty"), "UTF-8").length());
     }
 
     @Override
