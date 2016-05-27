@@ -43,6 +43,12 @@
     (is (thrown-with-msg? JsonMappingException #"Derp!  You must escape any quote characters"
           (roundtrip "single-line-ascii-with-quote.txt"))))
 
+  (testing "can roundtrip text from a single-line ascii file with an escaped quote"
+    (let [{:keys [deserialized input-bytes]} (roundtrip "single-line-ascii-with-escaped-quote.txt")]
+      (is (instance? InputStream (.get deserialized "foo")))
+      (is (instance? InputStream (.get deserialized "file-contents")))
+      (is (bytes-match? input-bytes (.get deserialized "file-contents")))))
+
   (testing "can't serialize a stream that contains unescaped quotes"
     (is (thrown-with-msg? JsonMappingException #"Derp!  You must escape any quote characters"
                           (roundtrip "foo.jpeg")))))
