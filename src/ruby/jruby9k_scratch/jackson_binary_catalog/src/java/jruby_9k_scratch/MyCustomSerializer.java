@@ -49,7 +49,7 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
             super(ctxt, features, in, codec, sym, inputBuffer, start, end, bufferRecyclable);
         }
 
-        private String _myReturnString() throws IOException {
+        private InputStream _myReturnString() throws IOException {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             byte b;
             boolean isPrevCharBackslash = false;
@@ -80,12 +80,10 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
                 }
             }
 
-            return IOUtils.toString(out.toInputStream(), "UTF-8");
+            return out.toInputStream();
         }
 
-
-        @Override
-        public String getText() throws IOException {
+        public InputStream getBytesAsInputStream() throws IOException {
             if (_currToken == JsonToken.VALUE_STRING) {
                 if (_tokenIncomplete) {
                     _tokenIncomplete = false;
@@ -111,7 +109,10 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
         public String deserialize(JsonParser p, DeserializationContext ctxt) throws IOException
         {
             if (p.hasToken(JsonToken.VALUE_STRING)) {
-                return p.getText();
+//                return p.getBinaryValue();
+                return IOUtils.toString(
+                        ((MyUTF8StreamJsonParser)p).getBytesAsInputStream(),
+                        "UTF-8");
             }
             throw new IllegalStateException("I dunno why my string deserializer is being called for something that is not a string!");
         }
