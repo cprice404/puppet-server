@@ -10,7 +10,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.SerializableString;
 import com.fasterxml.jackson.core.Version;
-import com.fasterxml.jackson.core.io.CharTypes;
 import com.fasterxml.jackson.core.io.IOContext;
 import com.fasterxml.jackson.core.json.UTF8JsonGenerator;
 import com.fasterxml.jackson.core.json.UTF8StreamJsonParser;
@@ -40,18 +39,10 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MyCustomSerializer extends StdScalarSerializer<String> {
+public class MyCustomSerializer extends StdScalarSerializer<InputStream> {
     public MyCustomSerializer() {
-        super(String.class);
+        super(InputStream.class);
     }
-
-//    public static class NotActuallyAString extends String {
-//
-//        @Override
-//        public int read() throws IOException {
-//            throw new IllegalStateException("Not implemented.");
-//        }
-//    }
 
     public static class LessSimpleModule extends SimpleModule {
         public LessSimpleModule(String name, Version version) {
@@ -342,11 +333,19 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
         testModule.addDeserializerWithoutTypeCheck(String.class, new MyCustomDeserializer());
         mapper.registerModule(testModule);
 
+        int numBytes = 10000;
+        byte[] bytes =  new byte[numBytes];
+        for (int i = 0; i < 10000; i++) {
+            bytes[i] = 'f';
+        }
+        InputStream binaryData1 = new ByteArrayInputStream(bytes);
+        InputStream binaryData2 = new ByteArrayInputStream(bytes);
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         Map<String, Object> value = new HashMap<>();
-        value.put("foo", "bar");
-        Map<String, String> nested = new HashMap<>();
-        nested.put("nesty", "nestyvalue");
+        value.put("foo", binaryData1);
+        Map<String, Object> nested = new HashMap<>();
+        nested.put("nesty", binaryData2);
         value.put("mappy", nested);
         mapper.writeValue(out, value);
         out.close();
@@ -366,13 +365,15 @@ public class MyCustomSerializer extends StdScalarSerializer<String> {
     }
 
     @Override
-    public void serialize(String value, JsonGenerator gen, SerializerProvider provider) throws IOException {
-        int numBytes = 10000;
-        byte[] bytes =  new byte[numBytes];
-        for (int i = 0; i < 10000; i++) {
-            bytes[i] = 'f';
-        }
-        InputStream binaryData = new ByteArrayInputStream(bytes);
-        gen.writeBinary(binaryData, -1);
+    public void serialize(InputStream value, JsonGenerator gen, SerializerProvider provider) throws IOException {
+//        int numBytes = 10000;
+//        byte[] bytes =  new byte[numBytes];
+//        for (int i = 0; i < 10000; i++) {
+//            bytes[i] = 'f';
+//        }
+//        InputStream binaryData = new ByteArrayInputStream(bytes);
+//        gen.writeBinary(binaryData, -1);
+        gen.writeBinary(value, -1);
     }
 }
+
