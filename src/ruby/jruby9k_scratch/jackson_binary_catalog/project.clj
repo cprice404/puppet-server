@@ -10,7 +10,10 @@
 
   :source-paths ["src/clj"]
   :java-source-paths ["src/java"]
+  :test-paths ["test/clj"]
 
-  :profiles {:dev {:source-paths  ["dev"]}}
+
+  :profiles {:dev {:source-paths  ["dev"]
+                   :java-source-paths ["test/java"]}}
 
   )
