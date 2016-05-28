@@ -3,7 +3,7 @@
             [clojure.java.io :as io])
   (:import (java.io FileInputStream InputStream ByteArrayInputStream)
            (org.apache.commons.io.output ByteArrayOutputStream)
-           (puppetlabs.jackson.unencoded UnencodedInputStreamJsonMapper)
+           (puppetlabs.jackson.unencoded JackedSonMapper)
            (org.apache.commons.io IOUtils)
            (com.fasterxml.jackson.databind JsonMappingException)
            (jruby_9k_scratch EscapedQuoteInputStream UnescapedQuoteInputStream)))
@@ -19,7 +19,7 @@
          orig-map {"foo" "bar"
                    "file-contents" byte-instream}
          serialized-outstream (ByteArrayOutputStream.)
-         mapper (UnencodedInputStreamJsonMapper.)
+         mapper (JackedSonMapper.)
          _ (.writeValue mapper serialized-outstream orig-map)
          serialized-instream (.toInputStream serialized-outstream)
          deserialized (.readMapWithUnencodedInputStreams mapper serialized-instream)]

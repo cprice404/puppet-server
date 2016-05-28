@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class UnencodedInputStreamSerializer extends StdScalarSerializer<InputStream> {
-    public UnencodedInputStreamSerializer() {
+public class JackedSonSerializer extends StdScalarSerializer<InputStream> {
+    public JackedSonSerializer() {
         super(InputStream.class);
     }
 
@@ -17,8 +17,8 @@ public class UnencodedInputStreamSerializer extends StdScalarSerializer<InputStr
     public void serialize(InputStream value, JsonGenerator gen, SerializerProvider provider) throws IOException {
         // if we get here and the generator isn't our complementary one, we're
         // hosed.
-        if (! (gen instanceof  UnencodedInputStreamJsonGenerator)) {
-            throw new IllegalStateException("UnencodedInputStreamSerializer only works in combination with UnencodedInputStreamGenerator.");
+        if (! (gen instanceof JackedSonGenerator)) {
+            throw new IllegalStateException("JackedSonSerializer only works in combination with UnencodedInputStreamGenerator.");
         }
         gen.writeBinary(value, -1);
     }

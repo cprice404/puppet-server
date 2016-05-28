@@ -10,15 +10,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-public class UnencodedInputStreamJsonGenerator extends UTF8JsonGenerator {
+public class JackedSonGenerator extends UTF8JsonGenerator {
     private final static byte BYTE_QUOTE = (byte) '"';
     protected final static int BYTE_BACKSLASH = (byte) '\\';
 
-    public UnencodedInputStreamJsonGenerator(IOContext ctxt, int features, ObjectCodec codec, OutputStream out) {
+    public JackedSonGenerator(IOContext ctxt, int features, ObjectCodec codec, OutputStream out) {
         super(ctxt, features, codec, out);
     }
 
-    public UnencodedInputStreamJsonGenerator(IOContext ctxt, int features, ObjectCodec codec, OutputStream out, byte[] outputBuffer, int outputOffset, boolean bufferRecyclable) {
+    public JackedSonGenerator(IOContext ctxt, int features, ObjectCodec codec, OutputStream out, byte[] outputBuffer, int outputOffset, boolean bufferRecyclable) {
         super(ctxt, features, codec, out, outputBuffer, outputOffset, bufferRecyclable);
         throw new IllegalStateException("Not supported!");
     }
@@ -76,7 +76,7 @@ public class UnencodedInputStreamJsonGenerator extends UTF8JsonGenerator {
                 }
                 b = readBuffer[inputPtr];
                 if ((!isPrevCharBackslash) && (b == BYTE_QUOTE)) {
-                    throw new IllegalStateException("Derp!  You must escape any quote characters in your stream before it can be serialized by UnencodedInputStreamJsonGenerator.");
+                    throw new IllegalStateException("Derp!  You must escape any quote characters in your stream before it can be serialized by JackedSonGenerator.");
                 }
                 _outputBuffer[_outputTail++] = b;
                 inputPtr++;
