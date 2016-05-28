@@ -10,8 +10,8 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class UnencodedInputStreamJsonParser extends UTF8StreamJsonParser {
-    public UnencodedInputStreamJsonParser(IOContext ctxt, int features, InputStream in, ObjectCodec codec, ByteQuadsCanonicalizer sym, byte[] inputBuffer, int start, int end, boolean bufferRecyclable) {
+public class JackedSonParser extends UTF8StreamJsonParser {
+    public JackedSonParser(IOContext ctxt, int features, InputStream in, ObjectCodec codec, ByteQuadsCanonicalizer sym, byte[] inputBuffer, int start, int end, boolean bufferRecyclable) {
         super(ctxt, features, in, codec, sym, inputBuffer, start, end, bufferRecyclable);
     }
 

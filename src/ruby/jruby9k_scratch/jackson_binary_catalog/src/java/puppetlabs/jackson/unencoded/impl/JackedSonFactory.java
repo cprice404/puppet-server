@@ -18,7 +18,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.net.URL;
 
-public class UnencodedInputStreamJsonFactory extends MappingJsonFactory {
+public class JackedSonFactory extends MappingJsonFactory {
     // NOTE: The overridden methods here were originally copied from the
     // parent class, so if anything is broken it's worth comparing to those.
 
@@ -40,8 +40,8 @@ public class UnencodedInputStreamJsonFactory extends MappingJsonFactory {
         if (enc == JsonEncoding.UTF8) {
 //            return _createUnencodedGenerator(_decorate(out, ctxt), ctxt);
 
-            UnencodedInputStreamJsonGenerator gen =
-                    new UnencodedInputStreamJsonGenerator(ctxt,
+            JackedSonGenerator gen =
+                    new JackedSonGenerator(ctxt,
                     _generatorFeatures, _objectCodec, _decorate(out, ctxt));
             if (_characterEscapes != null) {
                 gen.setCharacterEscapes(_characterEscapes);
@@ -66,7 +66,7 @@ public class UnencodedInputStreamJsonFactory extends MappingJsonFactory {
         byte[] inputBuffer = ctxt.allocReadIOBuffer();
 
         ByteQuadsCanonicalizer can = _byteSymbolCanonicalizer.makeChild(_factoryFeatures);
-        return new UnencodedInputStreamJsonParser(ctxt, _parserFeatures,
+        return new JackedSonParser(ctxt, _parserFeatures,
                 _decorate(in, ctxt),_objectCodec, can,
                 inputBuffer, inputPtr, inputEnd, true);
     }
