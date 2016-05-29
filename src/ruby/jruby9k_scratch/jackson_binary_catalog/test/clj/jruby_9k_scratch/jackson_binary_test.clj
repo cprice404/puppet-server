@@ -26,6 +26,9 @@
      {:input-bytes bytes
       :deserialized deserialized})))
 
+;; TODO: add tests that cover case where inputstreamwrappers are passed to
+;; jackedsonmapper constructor.
+
 (defn bytes-match?
   [orig-bytes roundtripped-stream]
   (= (seq orig-bytes) (seq (IOUtils/toByteArray roundtripped-stream))))
