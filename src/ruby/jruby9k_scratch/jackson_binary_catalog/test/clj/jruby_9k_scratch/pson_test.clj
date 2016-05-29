@@ -2,7 +2,16 @@
   (:require [clojure.test :refer :all]
             [clojure.java.io :as io])
   (:import (org.jruby.embed ScriptingContainer)
-           (org.jruby RubyInstanceConfig$CompileMode CompatVersion RubyString RubyHash RubyArray)))
+           (org.jruby RubyInstanceConfig$CompileMode CompatVersion RubyString RubyHash RubyArray)
+           (java.io FileInputStream)
+           (puppetlabs.jackson.unencoded JackedSonMapper)
+           (org.apache.commons.io.output ByteArrayOutputStream)
+           (org.apache.commons.io IOUtils)
+           (jruby_9k_scratch QuoteEscapingInputStreamWrapper)))
+
+(defn test-file
+  [f]
+  (str "dev-resources/jruby9k_scratch/pson_test/" f))
 
 (defn create-scripting-container
   []
@@ -50,7 +59,7 @@
 (defn ruby-read-file
   [f]
   (let [{:keys [sc converter]} (scripting-container)
-        filepath (str "dev-resources/jruby9k_scratch/pson_test/" f)]
+        filepath (test-file f)]
     (.callMethod sc converter "read_file" filepath RubyString)))
 
 (defn to-pson
@@ -62,6 +71,24 @@
   [rs]
   (let [{:keys [sc pson]} (scripting-container)]
     (.callMethod sc pson "parse" rs Object)))
+
+(defn jackpson-mapper
+  []
+  (JackedSonMapper.
+   (QuoteEscapingInputStreamWrapper.)
+   (QuoteUnescapingInputStreamWrapper.)))
+
+(defn to-jackpson
+  [x]
+  (let [out (ByteArrayOutputStream.)
+        mapper (jackpson-mapper)]
+    (.writeValue mapper out x )
+    (.toInputStream out)))
+
+(defn from-jackpson
+  [serialized-instream]
+  (let [mapper (jackpson-mapper)]
+    (.readValue mapper serialized-instream)))
 
 (deftest pson-roundtrip
   (testing "Can roundtrip a simple array w/pson"
@@ -82,4 +109,29 @@
           serialized (to-pson m)
           _ (io/copy (.getBytes serialized) (io/file "./target/jpeg-serialized-as-array.pson"))
           deserialized (from-pson serialized)]
+      (is (= m deserialized)))))
+
+(deftest jackpson-roundtrip
+  (testing "Can roundtrip a simple array w/jackpson"
+    (let [a ["funky", "town"]
+          serialized (to-jackpson a)
+          deserialized (from-jackpson serialized)]
+      (is (= a (mapv (fn [is] (IOUtils/toString is "UTF-8"))
+                     deserialized)))))
+
+  (testing "Can roundtrip a simple map w/jackpson"
+    (let [m {"foo" "fooval"
+             "bar" "barval"}
+          serialized (to-jackpson m)
+          deserialized (from-jackpson serialized)]
+      (is (= m (reduce (fn [acc [k v]]
+                         (assoc acc k (IOUtils/toString v "UTF-8")))
+                       {}
+                       deserialized)))))
+
+  (testing "Can roundtrip an array with jpeg contents w/jackpson"
+    (let [m (to-a [(FileInputStream. (test-file "foo.jpeg"))])
+          serialized (to-jackpson m)
+          _ (io/copy serialized (io/file "./target/jpeg-serialized-as-array.jackpson"))
+          deserialized (from-jackpson serialized)]
       (is (= m deserialized)))))
