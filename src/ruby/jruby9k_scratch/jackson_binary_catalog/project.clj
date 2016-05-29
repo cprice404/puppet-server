@@ -4,7 +4,9 @@
                  [commons-io "2.5"]
                  [commons-lang "2.6"]
                  [com.fasterxml.jackson.core/jackson-databind "2.7.3"]
-                 ]
+
+                 [org.jruby/jruby-core "9.1.1.0"]
+                 [org.jruby/jruby-stdlib "9.1.1.0"]]
 
   :pedantic? :abort
 
