@@ -3,11 +3,11 @@
             [clojure.java.io :as io])
   (:import (org.jruby.embed ScriptingContainer)
            (org.jruby RubyInstanceConfig$CompileMode CompatVersion RubyString RubyHash RubyArray)
-           (java.io FileInputStream)
+           (java.io FileInputStream ByteArrayInputStream)
            (puppetlabs.jackson.unencoded JackedSonMapper)
            (org.apache.commons.io.output ByteArrayOutputStream)
            (org.apache.commons.io IOUtils)
-           (jruby_9k_scratch QuoteEscapingInputStreamWrapper)))
+           (jruby_9k_scratch QuoteEscapingInputStreamWrapper QuoteUnescapingInputStreamWrapper)))
 
 (defn test-file
   [f]
@@ -105,11 +105,11 @@
       (is (= m deserialized))))
 
   (testing "Can roundtrip an array with jpeg contents w/pson"
-    (let [m (to-a [(ruby-read-file "foo.jpeg")])
-          serialized (to-pson m)
+    (let [a (to-a [(ruby-read-file "foo.jpeg")])
+          serialized (to-pson a)
           _ (io/copy (.getBytes serialized) (io/file "./target/jpeg-serialized-as-array.pson"))
           deserialized (from-pson serialized)]
-      (is (= m deserialized)))))
+      (is (= a deserialized)))))
 
 (deftest jackpson-roundtrip
   (testing "Can roundtrip a simple array w/jackpson"
@@ -130,8 +130,12 @@
                        deserialized)))))
 
   (testing "Can roundtrip an array with jpeg contents w/jackpson"
-    (let [m (to-a [(FileInputStream. (test-file "foo.jpeg"))])
-          serialized (to-jackpson m)
-          _ (io/copy serialized (io/file "./target/jpeg-serialized-as-array.jackpson"))
-          deserialized (from-jackpson serialized)]
-      (is (= m deserialized)))))
+    (let [orig-bytes (IOUtils/toByteArray (FileInputStream. (test-file "foo.jpeg")))
+          a [(ByteArrayInputStream. orig-bytes)]
+          serialized (to-jackpson a)
+          bytes (IOUtils/toByteArray serialized)
+          _ (io/copy bytes (io/file "./target/jpeg-serialized-as-array.jackpson"))
+          deserialized (from-jackpson (ByteArrayInputStream. bytes))
+          a [(ByteArrayInputStream. orig-bytes)]]
+      (is (= (mapv (fn [is] (seq (IOUtils/toByteArray is))) a)
+             (mapv (fn [is] (seq (IOUtils/toByteArray is))) deserialized))))))
