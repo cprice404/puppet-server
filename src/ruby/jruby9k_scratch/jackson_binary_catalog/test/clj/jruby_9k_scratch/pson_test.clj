@@ -137,13 +137,6 @@
                        {}
                        deserialized)))))
 
-  #_(testing "Can roundtrip an array with jpeg contents w/pson"
-    (let [a (to-a [(ruby-read-file "foo.jpeg")])
-          serialized (to-pson a)
-          _ (io/copy (.getBytes serialized) (io/file "./target/jpeg-serialized-as-array.pson"))
-          deserialized (from-pson serialized)]
-      (is (= a deserialized))))
-
   (testing "Can roundtrip an array with jpeg contents w/jackpson"
     (let [orig-bytes (IOUtils/toByteArray (FileInputStream. (test-file "foo.jpeg")))
           a [(ByteArrayInputStream. orig-bytes)]

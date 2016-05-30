@@ -6,7 +6,7 @@
            (puppetlabs.jackson.unencoded JackedSonMapper)
            (org.apache.commons.io IOUtils)
            (com.fasterxml.jackson.databind JsonMappingException)
-           (jruby_9k_scratch EscapedQuoteInputStream UnescapedQuoteInputStream)))
+           (jruby_9k_scratch QuoteEscapingInputStreamWrapper QuoteUnescapingInputStreamWrapper)))
 
 (defn roundtrip
   ([test-file-name]
@@ -57,20 +57,24 @@
       (is (bytes-match? input-bytes (.get deserialized "file-contents")))))
 
   (testing "can roundtrip text with unescaped quote, when using escaped stream"
-    (let [{:keys [deserialized input-bytes]} (roundtrip "single-line-ascii-with-quote.txt"
-                                                        (fn [is] (EscapedQuoteInputStream. is)))]
+    (let [in-wrapper (QuoteEscapingInputStreamWrapper.)
+          out-wrapper (QuoteUnescapingInputStreamWrapper.)
+          {:keys [deserialized input-bytes]} (roundtrip "single-line-ascii-with-quote.txt"
+                                                        (fn [is] (.wrap in-wrapper is)))]
       (is (instance? InputStream (.get deserialized "foo")))
       (is (instance? InputStream (.get deserialized "file-contents")))
-      (is (bytes-match? input-bytes (UnescapedQuoteInputStream. (.get deserialized "file-contents"))))))
+      (is (bytes-match? input-bytes (.wrap out-wrapper (.get deserialized "file-contents"))))))
 
   (testing "can't read a jpeg file that happens to contain an unescaped quote char"
     (is (thrown-with-msg? JsonMappingException #"Derp!  You must escape any quote characters"
                           (roundtrip "foo.jpeg"))))
 
   (testing "can roundtrip a jpeg file that happens to contain an unescaped quote char, when using escaped stream"
-    (let [{:keys [deserialized input-bytes]} (roundtrip "foo.jpeg"
-                                                        (fn [is] (EscapedQuoteInputStream. is)))]
+    (let [in-wrapper (QuoteEscapingInputStreamWrapper.)
+          out-wrapper (QuoteUnescapingInputStreamWrapper.)
+          {:keys [deserialized input-bytes]} (roundtrip "foo.jpeg"
+                                                        (fn [is] (.wrap in-wrapper is)))]
       (is (instance? InputStream (.get deserialized "foo")))
       (is (instance? InputStream (.get deserialized "file-contents")))
       ;(io/copy (UnescapedQuoteInputStream. (.get deserialized "file-contents")) (io/file "./FOOCOPY.jpeg") )
-      (is (bytes-match? input-bytes (UnescapedQuoteInputStream. (.get deserialized "file-contents")))))))
+      (is (bytes-match? input-bytes (.wrap out-wrapper (.get deserialized "file-contents")))))))
