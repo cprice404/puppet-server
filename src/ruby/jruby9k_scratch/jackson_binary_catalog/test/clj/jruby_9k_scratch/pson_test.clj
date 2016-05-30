@@ -85,6 +85,14 @@
     (.writeValue mapper out x )
     (.toInputStream out)))
 
+(defn jackpson-array-seq
+  [a]
+  (let [to-seq (fn [is]
+                 (when (.markSupported is)
+                   (.reset is))
+                 (seq (IOUtils/toByteArray is)))]
+    (mapv to-seq a)))
+
 (defn from-jackpson
   [serialized-instream]
   (let [mapper (jackpson-mapper)]
@@ -129,13 +137,19 @@
                        {}
                        deserialized)))))
 
+  #_(testing "Can roundtrip an array with jpeg contents w/pson"
+    (let [a (to-a [(ruby-read-file "foo.jpeg")])
+          serialized (to-pson a)
+          _ (io/copy (.getBytes serialized) (io/file "./target/jpeg-serialized-as-array.pson"))
+          deserialized (from-pson serialized)]
+      (is (= a deserialized))))
+
   (testing "Can roundtrip an array with jpeg contents w/jackpson"
     (let [orig-bytes (IOUtils/toByteArray (FileInputStream. (test-file "foo.jpeg")))
           a [(ByteArrayInputStream. orig-bytes)]
           serialized (to-jackpson a)
           bytes (IOUtils/toByteArray serialized)
           _ (io/copy bytes (io/file "./target/jpeg-serialized-as-array.jackpson"))
-          deserialized (from-jackpson (ByteArrayInputStream. bytes))
-          a [(ByteArrayInputStream. orig-bytes)]]
-      (is (= (mapv (fn [is] (seq (IOUtils/toByteArray is))) a)
-             (mapv (fn [is] (seq (IOUtils/toByteArray is))) deserialized))))))
+          deserialized (from-jackpson (ByteArrayInputStream. bytes))]
+      (is (= (jackpson-array-seq a)
+             (jackpson-array-seq deserialized))))))
