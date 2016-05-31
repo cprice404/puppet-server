@@ -35,7 +35,18 @@
                           "   end\n"
                           "\n"
                           "   def self.read_file(f)\n"
-                          "      File.new(f).read\n"
+                          "      puts 'reading file'\n"
+                          "      s = File.new(f).read\n"
+                          "      puts \"s.length: #{s.length}\"\n"
+                          "      puts \"forced encoding s.length: #{s.dup.force_encoding(Encoding::ASCII_8BIT).length}\"\n"
+                          "      s\n"
+                          "   end\n"
+                          "\n"
+                          "   def self.force_encoding(s)\n"
+                          "      puts \"CONV#fe: forcing encoding; s.length: #{s.length}\"\n"
+                          "      rv = s.dup.force_encoding(Encoding::ASCII_8BIT)\n"
+                          "      puts \"CONV#fe: forced encoding; rv.length: #{rv.length}\"\n"
+                          "      rv\n"
                           "   end\n"
                           "end\n"
                           "Converter\n"))]
@@ -44,7 +55,8 @@
        :converter converter})))
 
 (def scripting-container
-  (memoize create-scripting-container))
+  #_(memoize create-scripting-container)
+  create-scripting-container)
 
 (defn to-a
   [a]
@@ -75,6 +87,11 @@
 (defn pson-string->byte-seq
   [s]
   (seq (.getBytes s)))
+
+(defn pson-string-with-forced-encoding
+  [s]
+  (let [{:keys [sc converter]} (scripting-container)]
+    (.callMethod sc converter "force_encoding" s RubyString)))
 
 (defn jackpson-mapper
   []
@@ -110,13 +127,13 @@
 
 
 (deftest pson-roundtrip
-  (testing "Can roundtrip a simple array w/pson"
+  #_(testing "Can roundtrip a simple array w/pson"
     (let [a (to-a ["funky" "town"])
           serialized (to-pson a)
           deserialized (from-pson serialized)]
       (is (= a deserialized))))
 
-  (testing "Can roundtrip a simple map w/pson"
+  #_(testing "Can roundtrip a simple map w/pson"
     (let [m (to-h {"foo" "fooval"
                    "bar" "barval"})
           serialized (to-pson m)
@@ -124,11 +141,21 @@
       (is (= m deserialized))))
 
   (testing "Can roundtrip an array with jpeg contents w/pson"
-    (let [a (to-a [(ruby-read-file "foo.jpeg")])
+    (let [orig-bytes (IOUtils/toByteArray (FileInputStream. (test-file "foo.jpeg")))
+          a (to-a [(ruby-read-file "foo.jpeg")])
           serialized (to-pson a)
           _ (io/copy (.getBytes serialized) (io/file "./target/jpeg-serialized-as-array.pson"))
-          deserialized (from-pson serialized)]
-      (is (= a deserialized)))))
+          deserialized (from-pson serialized)
+          deserialized-byte-seq (seq (.getBytes (first deserialized)))]
+      (is (= a deserialized))
+      (is (= (count (seq orig-bytes))
+             (count deserialized-byte-seq)))
+      (is (= (count (seq orig-bytes))
+             (count (seq (.getBytes
+                          (pson-string-with-forced-encoding
+                           (first deserialized)))))))
+      (is (= (seq orig-bytes)
+             (seq deserialized-byte-seq))))))
 
 (deftest jackpson-roundtrip
   (testing "Can roundtrip a simple array w/jackpson"
@@ -154,7 +181,13 @@
           serialized (to-jackpson a)
           bytes (IOUtils/toByteArray serialized)
           _ (io/copy bytes (io/file "./target/jpeg-serialized-as-array.jackpson"))
-          deserialized (from-jackpson (ByteArrayInputStream. bytes))]
+          deserialized (from-jackpson (ByteArrayInputStream. bytes))
+          deserialized-byte-seq (seq (IOUtils/toByteArray
+                                      (first
+                                       (from-jackpson (ByteArrayInputStream. bytes)))))]
+      (is (= (count (seq orig-bytes))
+             (count deserialized-byte-seq)))
+      (is (= (seq orig-bytes) deserialized-byte-seq))
       (is (= (jackpson-array-seq a)
              (jackpson-array-seq deserialized))))))
 
@@ -187,4 +220,24 @@
              (reduce (fn [acc [k v]]
                        (assoc acc k (IOUtils/toString v "UTF-8")))
                      {}
-                     jackpson-deserialized))))))
+                     jackpson-deserialized)))))
+
+  (testing "Jpeg serializes and deserializes the same with pson and jackpson"
+    (let [pson-a (to-a [(ruby-read-file "foo.jpeg")])
+          orig-bytes (IOUtils/toByteArray (FileInputStream. (test-file "foo.jpeg")))
+          jackpson-a [(ByteArrayInputStream. orig-bytes)]
+          pson-serialized (to-pson (to-a pson-a))
+          jackpson-serialized-bytes (IOUtils/toByteArray
+                                     (to-jackpson jackpson-a))
+          pson-deserialized (from-pson pson-serialized)
+          jackpson-deserialized (from-jackpson (ByteArrayInputStream.
+                                                jackpson-serialized-bytes))
+          pson-deserialized-byte-seqs (mapv pson-string->byte-seq pson-deserialized)
+          jackpson-deserialized-byte-seqs (mapv jackpson-stream->byte-seq jackpson-deserialized)
+          ]
+      (is (= (seq (.getBytes pson-serialized))
+             (seq jackpson-serialized-bytes)))
+      (is (= (count (first pson-deserialized-byte-seqs))
+             (count (first jackpson-deserialized-byte-seqs))))))
+
+  )
