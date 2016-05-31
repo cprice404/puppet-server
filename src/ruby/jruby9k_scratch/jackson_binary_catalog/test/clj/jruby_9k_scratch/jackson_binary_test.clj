@@ -8,10 +8,10 @@
            (com.fasterxml.jackson.databind JsonMappingException)
            (jruby_9k_scratch QuoteEscapingInputStreamWrapper QuoteUnescapingInputStreamWrapper)))
 
-(defn roundtrip
-  ([test-file-name]
-   (roundtrip test-file-name identity))
-  ([test-file-name instream-wrap-fn]
+(defn roundtrip-with-mapper
+  ([mapper test-file-name]
+   (roundtrip-with-mapper mapper test-file-name identity))
+  ([mapper test-file-name instream-wrap-fn]
    (let [test-file (str "./dev-resources/jruby9k_scratch/jackson_binary_test/" test-file-name)
          instream (FileInputStream. test-file)
          bytes (IOUtils/toByteArray instream)
@@ -19,15 +19,18 @@
          orig-map {"foo" "bar"
                    "file-contents" byte-instream}
          serialized-outstream (ByteArrayOutputStream.)
-         mapper (JackedSonMapper.)
          _ (.writeValue mapper serialized-outstream orig-map)
          serialized-instream (.toInputStream serialized-outstream)
          deserialized (.readMapWithUnencodedInputStreams mapper serialized-instream)]
      {:input-bytes bytes
       :deserialized deserialized})))
 
-;; TODO: add tests that cover case where inputstreamwrappers are passed to
-;; jackedsonmapper constructor.
+(defn roundtrip
+  ([test-file-name]
+   (roundtrip test-file-name identity))
+  ([test-file-name instream-wrap-fn]
+   (let [mapper (JackedSonMapper.)]
+     (roundtrip-with-mapper mapper test-file-name instream-wrap-fn))))
 
 (defn bytes-match?
   [orig-bytes roundtripped-stream]
@@ -77,4 +80,13 @@
       (is (instance? InputStream (.get deserialized "foo")))
       (is (instance? InputStream (.get deserialized "file-contents")))
       ;(io/copy (UnescapedQuoteInputStream. (.get deserialized "file-contents")) (io/file "./FOOCOPY.jpeg") )
-      (is (bytes-match? input-bytes (.wrap out-wrapper (.get deserialized "file-contents")))))))
+      (is (bytes-match? input-bytes (.wrap out-wrapper (.get deserialized "file-contents"))))))
+
+  (testing "can roundtrip a jpeg file that happens to contain an unescaped quote char, when using jackedsonmapper constructor with wrappers"
+    (let [mapper (JackedSonMapper. (QuoteEscapingInputStreamWrapper.) (QuoteUnescapingInputStreamWrapper.))
+          {:keys [deserialized input-bytes]} (roundtrip-with-mapper mapper "foo.jpeg")]
+      (is (instance? InputStream (.get deserialized "foo")))
+      (is (instance? InputStream (.get deserialized "file-contents")))
+      ;(io/copy (UnescapedQuoteInputStream. (.get deserialized "file-contents")) (io/file "./FOOCOPY.jpeg") )
+      (is (bytes-match? input-bytes (.get deserialized "file-contents")))))
+  )
