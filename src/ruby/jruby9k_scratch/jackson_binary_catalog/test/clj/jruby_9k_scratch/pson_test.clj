@@ -72,6 +72,10 @@
   (let [{:keys [sc pson]} (scripting-container)]
     (.callMethod sc pson "parse" rs Object)))
 
+(defn pson-string->byte-seq
+  [s]
+  (seq (.getBytes s)))
+
 (defn jackpson-mapper
   []
   (JackedSonMapper.
@@ -98,9 +102,16 @@
   (let [mapper (jackpson-mapper)]
     (.readValue mapper serialized-instream)))
 
+(defn jackpson-stream->byte-seq
+  [is]
+  (seq (IOUtils/toByteArray is)))
+
+
+
+
 (deftest pson-roundtrip
   (testing "Can roundtrip a simple array w/pson"
-    (let [a (to-a ["funky", "town"])
+    (let [a (to-a ["funky" "town"])
           serialized (to-pson a)
           deserialized (from-pson serialized)]
       (is (= a deserialized))))
@@ -121,7 +132,7 @@
 
 (deftest jackpson-roundtrip
   (testing "Can roundtrip a simple array w/jackpson"
-    (let [a ["funky", "town"]
+    (let [a ["funky" "town"]
           serialized (to-jackpson a)
           deserialized (from-jackpson serialized)]
       (is (= a (mapv (fn [is] (IOUtils/toString is "UTF-8"))
@@ -146,3 +157,34 @@
           deserialized (from-jackpson (ByteArrayInputStream. bytes))]
       (is (= (jackpson-array-seq a)
              (jackpson-array-seq deserialized))))))
+
+(deftest jackpson-pson-compat-test
+  (testing "Simple array serializes and deserializes the same with pson and jackpson"
+    (let [a ["funky" "town"]
+          pson-serialized (to-pson (to-a a))
+          jackpson-serialized-bytes (IOUtils/toByteArray
+                                     (to-jackpson a))
+          pson-deserialized (from-pson pson-serialized)
+          jackpson-deserialized (from-jackpson (ByteArrayInputStream.
+                                                jackpson-serialized-bytes))]
+      (is (= (seq (.getBytes pson-serialized))
+             (seq jackpson-serialized-bytes)))
+      (is (= (mapv pson-string->byte-seq pson-deserialized)
+             (mapv jackpson-stream->byte-seq jackpson-deserialized)))))
+
+  (testing "Simple map serializes and deserializes the same with pson and jackpson"
+    (let [m {"foo" "fooval"
+             "bar" "barval"}
+          pson-serialized (to-pson (to-h m))
+          jackpson-serialized-bytes (IOUtils/toByteArray
+                                     (to-jackpson m))
+          pson-deserialized (from-pson pson-serialized)
+          jackpson-deserialized (from-jackpson (ByteArrayInputStream.
+                                                jackpson-serialized-bytes))]
+      (is (= (seq (.getBytes pson-serialized))
+             (seq jackpson-serialized-bytes)))
+      (is (= pson-deserialized
+             (reduce (fn [acc [k v]]
+                       (assoc acc k (IOUtils/toString v "UTF-8")))
+                     {}
+                     jackpson-deserialized))))))
