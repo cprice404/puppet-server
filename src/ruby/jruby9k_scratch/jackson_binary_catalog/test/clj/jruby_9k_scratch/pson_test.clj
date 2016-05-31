@@ -7,7 +7,10 @@
            (puppetlabs.jackson.unencoded JackedSonMapper)
            (org.apache.commons.io.output ByteArrayOutputStream)
            (org.apache.commons.io IOUtils)
-           (jruby_9k_scratch QuoteEscapingInputStreamWrapper QuoteUnescapingInputStreamWrapper)))
+           (jruby_9k_scratch QuoteEscapingInputStreamWrapper QuoteUnescapingInputStreamWrapper)
+           (org.slf4j LoggerFactory)))
+
+(def LOGGER (LoggerFactory/getLogger "psonfoo"))
 
 (defn test-file
   [f]
@@ -19,6 +22,8 @@
     (.setCompatVersion sc CompatVersion/RUBY1_9)
     (.setCompileMode sc RubyInstanceConfig$CompileMode/OFF)
     (.setLoadPaths sc ["../../../../ruby/puppet/lib"])
+    (.runScriptlet sc (str "java_import org.slf4j.LoggerFactory\n"
+                           "$LOGGER = LoggerFactory.getLogger('psonfoo')\n"))
     (let [pson (.runScriptlet
                 sc
                 (str "require 'puppet/external/pson/pure'\n"
@@ -35,18 +40,29 @@
                           "   end\n"
                           "\n"
                           "   def self.read_file(f)\n"
-                          "      puts 'reading file'\n"
+                          "      $LOGGER.info('reading file')\n"
                           "      s = File.new(f).read\n"
-                          "      puts \"s.length: #{s.length}\"\n"
-                          "      puts \"forced encoding s.length: #{s.dup.force_encoding(Encoding::ASCII_8BIT).length}\"\n"
+                          "      $LOGGER.info(\"s.length: #{s.length}\")\n"
+                          "      $LOGGER.info(\"forced encoding s.length: #{s.dup.force_encoding(Encoding::ASCII_8BIT).length}\")\n"
                           "      s\n"
                           "   end\n"
                           "\n"
                           "   def self.force_encoding(s)\n"
-                          "      puts \"CONV#fe: forcing encoding; s.length: #{s.length}\"\n"
+                          "      $LOGGER.info(\"CONV#fe: forcing encoding; s.length: #{s.length}\")\n"
                           "      rv = s.dup.force_encoding(Encoding::ASCII_8BIT)\n"
-                          "      puts \"CONV#fe: forced encoding; rv.length: #{rv.length}\"\n"
+                          "      $LOGGER.info(\"CONV#fe: forced encoding; rv.length: #{rv.length}\")\n"
                           "      rv\n"
+                          "   end\n"
+                          "\n"
+                          "   def self.count_bytes(s)\n"
+                          "      $LOGGER.info(\"CONV#count_bytes: #{s.length}\")\n"
+                          "      $LOGGER.info(\"CONV#count_bytes with forced encoding: #{s.dup.force_encoding(Encoding::ASCII_8BIT).length}\")\n"
+                          "      s.length\n"
+                          "   end\n"
+                          "\n"
+                          "   def self.deserialize_jpeg(s)\n"
+                          "      a = PSON.parse(s)\n"
+                          "      a[0]\n"
                           "   end\n"
                           "end\n"
                           "Converter\n"))]
@@ -77,12 +93,14 @@
 (defn to-pson
   [x]
   (let [{:keys [sc pson]} (scripting-container)]
+    (.info LOGGER "CALLING PSON.GENERATE FROM CLOJURE")
     (.callMethod sc pson "generate" x RubyString)))
 
 (defn from-pson
   [rs]
   (let [{:keys [sc pson]} (scripting-container)]
-    (.callMethod sc pson "parse" rs Object)))
+    (.info LOGGER (str "CALLING PSON.PARSE FROM CLOJURE"))
+    (.callMethod sc pson "parse" (into-array Object [rs]))))
 
 (defn pson-string->byte-seq
   [s]
@@ -92,6 +110,20 @@
   [s]
   (let [{:keys [sc converter]} (scripting-container)]
     (.callMethod sc converter "force_encoding" s RubyString)))
+
+(defn ruby-count-bytes
+  [s]
+  (let [{:keys [sc converter]} (scripting-container)]
+    (.callMethod sc converter "count_bytes" s Long)))
+
+(defn deserialize-jpeg-from-array
+  [s]
+  (let [{:keys [sc converter]} (scripting-container)]
+    (.callMethod sc converter "deserialize_jpeg" s RubyString)))
+
+
+
+
 
 (defn jackpson-mapper
   []
@@ -145,17 +177,27 @@
           a (to-a [(ruby-read-file "foo.jpeg")])
           serialized (to-pson a)
           _ (io/copy (.getBytes serialized) (io/file "./target/jpeg-serialized-as-array.pson"))
-          deserialized (from-pson serialized)
-          deserialized-byte-seq (seq (.getBytes (first deserialized)))]
-      (is (= a deserialized))
+          _ (.info LOGGER (str "test about to deserialize from pson"))
+          deserialized (deserialize-jpeg-from-array serialized)
+          _ (.info LOGGER (str "test done deserializing from pson: " (class deserialized)))
+          _ (.info LOGGER (str "deserialized object count: " (.bytesize deserialized)))
+          _ (.info LOGGER (str "deserialized object, is a ruby string?:" (instance? RubyString deserialized)))
+          deserialized-byte-seq (seq (.getBytes deserialized))
+          _ (.info LOGGER (str "count of bytes from jruby after deserialization:" (count deserialized-byte-seq)))
+
+          _ (.info LOGGER (str "count of bytes from ruby API after deserialization:" (ruby-count-bytes deserialized)))]
+      (.info LOGGER (str "moving on to assertions"))
+      #_(is (= a deserialized))
       (is (= (count (seq orig-bytes))
              (count deserialized-byte-seq)))
-      (is (= (count (seq orig-bytes))
+      #_(is (= (count (seq orig-bytes))
              (count (seq (.getBytes
                           (pson-string-with-forced-encoding
                            (first deserialized)))))))
       (is (= (seq orig-bytes)
-             (seq deserialized-byte-seq))))))
+             (seq deserialized-byte-seq)))
+      (.info LOGGER (str "FIN"))
+      )))
 
 (deftest jackpson-roundtrip
   (testing "Can roundtrip a simple array w/jackpson"
