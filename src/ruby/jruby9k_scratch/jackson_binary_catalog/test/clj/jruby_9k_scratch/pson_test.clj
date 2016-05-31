@@ -8,7 +8,8 @@
            (org.apache.commons.io.output ByteArrayOutputStream)
            (org.apache.commons.io IOUtils)
            (jruby_9k_scratch QuoteEscapingInputStreamWrapper QuoteUnescapingInputStreamWrapper)
-           (org.slf4j LoggerFactory)))
+           (org.slf4j LoggerFactory)
+           (puppetlabs.jackson.pson PsonEncodingInputStreamWrapper PsonDecodingInputStreamWrapper)))
 
 (def LOGGER (LoggerFactory/getLogger "psonfoo"))
 
@@ -127,9 +128,12 @@
 
 (defn jackpson-mapper
   []
-  (JackedSonMapper.
+  #_(JackedSonMapper.
    (QuoteEscapingInputStreamWrapper.)
-   (QuoteUnescapingInputStreamWrapper.)))
+   (QuoteUnescapingInputStreamWrapper.))
+  (JackedSonMapper.
+   (PsonEncodingInputStreamWrapper.)
+   (PsonDecodingInputStreamWrapper.)))
 
 (defn to-jackpson
   [x]
@@ -261,13 +265,18 @@
           pson-serialized (to-pson (to-a pson-a))
           jackpson-serialized-bytes (IOUtils/toByteArray
                                      (to-jackpson jackpson-a))
-          pson-deserialized (from-pson pson-serialized)
+          pson-deserialized (deserialize-jpeg-from-array pson-serialized)
           jackpson-deserialized (from-jackpson (ByteArrayInputStream.
                                                 jackpson-serialized-bytes))
-          pson-deserialized-byte-seqs (mapv pson-string->byte-seq pson-deserialized)
-          jackpson-deserialized-byte-seqs (mapv jackpson-stream->byte-seq jackpson-deserialized)
-          ]
-      (is (= (seq (.getBytes pson-serialized))
+          pson-deserialized-byte-seq (pson-string->byte-seq pson-deserialized)
+          jackpson-deserialized-byte-seq (jackpson-stream->byte-seq (first jackpson-deserialized))]
+      (is (= (seq orig-bytes)
+             pson-deserialized-byte-seq))
+      (is (= (seq orig-bytes)
+             jackpson-deserialized-byte-seq))
+      (is (= (count (pson-string->byte-seq pson-serialized))
+             (count (seq jackpson-serialized-bytes))))
+      #_(is (= (pson-string->byte-seq pson-serialized)
              (seq jackpson-serialized-bytes)))
-      (is (= (count (first pson-deserialized-byte-seqs))
+      #_(is (= (count (first pson-deserialized-byte-seqs))
              (count (first jackpson-deserialized-byte-seqs)))))))
