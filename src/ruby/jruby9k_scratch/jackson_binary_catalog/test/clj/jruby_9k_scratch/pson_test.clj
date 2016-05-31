@@ -47,19 +47,19 @@
                           "      s\n"
                           "   end\n"
                           "\n"
-                          "   def self.force_encoding(s)\n"
-                          "      $LOGGER.info(\"CONV#fe: forcing encoding; s.length: #{s.length}\")\n"
-                          "      rv = s.dup.force_encoding(Encoding::ASCII_8BIT)\n"
-                          "      $LOGGER.info(\"CONV#fe: forced encoding; rv.length: #{rv.length}\")\n"
-                          "      rv\n"
-                          "   end\n"
-                          "\n"
-                          "   def self.count_bytes(s)\n"
-                          "      $LOGGER.info(\"CONV#count_bytes: #{s.length}\")\n"
-                          "      $LOGGER.info(\"CONV#count_bytes with forced encoding: #{s.dup.force_encoding(Encoding::ASCII_8BIT).length}\")\n"
-                          "      s.length\n"
-                          "   end\n"
-                          "\n"
+                          ;"   def self.force_encoding(s)\n"
+                          ;"      $LOGGER.info(\"CONV#fe: forcing encoding; s.length: #{s.length}\")\n"
+                          ;"      rv = s.dup.force_encoding(Encoding::ASCII_8BIT)\n"
+                          ;"      $LOGGER.info(\"CONV#fe: forced encoding; rv.length: #{rv.length}\")\n"
+                          ;"      rv\n"
+                          ;"   end\n"
+                          ;"\n"
+                          ;"   def self.count_bytes(s)\n"
+                          ;"      $LOGGER.info(\"CONV#count_bytes: #{s.length}\")\n"
+                          ;"      $LOGGER.info(\"CONV#count_bytes with forced encoding: #{s.dup.force_encoding(Encoding::ASCII_8BIT).length}\")\n"
+                          ;"      s.length\n"
+                          ;"   end\n"
+                          ;"\n"
                           "   def self.deserialize_jpeg(s)\n"
                           "      a = PSON.parse(s)\n"
                           "      a[0]\n"
@@ -106,15 +106,15 @@
   [s]
   (seq (.getBytes s)))
 
-(defn pson-string-with-forced-encoding
-  [s]
-  (let [{:keys [sc converter]} (scripting-container)]
-    (.callMethod sc converter "force_encoding" s RubyString)))
-
-(defn ruby-count-bytes
-  [s]
-  (let [{:keys [sc converter]} (scripting-container)]
-    (.callMethod sc converter "count_bytes" s Long)))
+;(defn pson-string-with-forced-encoding
+;  [s]
+;  (let [{:keys [sc converter]} (scripting-container)]
+;    (.callMethod sc converter "force_encoding" s RubyString)))
+;
+;(defn ruby-count-bytes
+;  [s]
+;  (let [{:keys [sc converter]} (scripting-container)]
+;    (.callMethod sc converter "count_bytes" s Long)))
 
 (defn deserialize-jpeg-from-array
   [s]
@@ -159,45 +159,35 @@
 
 
 (deftest pson-roundtrip
-  #_(testing "Can roundtrip a simple array w/pson"
+  (testing "Can roundtrip a simple array w/pson"
     (let [a (to-a ["funky" "town"])
           serialized (to-pson a)
           deserialized (from-pson serialized)]
       (is (= a deserialized))))
 
-  #_(testing "Can roundtrip a simple map w/pson"
+  (testing "Can roundtrip a simple map w/pson"
     (let [m (to-h {"foo" "fooval"
                    "bar" "barval"})
           serialized (to-pson m)
           deserialized (from-pson serialized)]
       (is (= m deserialized))))
 
-  (testing "Can roundtrip an array with jpeg contents w/pson"
+  (testing "Can roundtrip a jpeg contents w/pson"
     (let [orig-bytes (IOUtils/toByteArray (FileInputStream. (test-file "foo.jpeg")))
+          ;; PSON wants an array or map to serialize, so we create a single-element array
           a (to-a [(ruby-read-file "foo.jpeg")])
           serialized (to-pson a)
           _ (io/copy (.getBytes serialized) (io/file "./target/jpeg-serialized-as-array.pson"))
-          _ (.info LOGGER (str "test about to deserialize from pson"))
+          ;; JRuby wants to convert elements inside of a Ruby array to Java classes
+          ;; (e.g. RubyString -> String) before returning from callMethod, so we call a special
+          ;; deserialize method here that returns the single element from within the array instead
+          ;; of returning the array.  That way we can still get a RubyString back.
           deserialized (deserialize-jpeg-from-array serialized)
-          _ (.info LOGGER (str "test done deserializing from pson: " (class deserialized)))
-          _ (.info LOGGER (str "deserialized object count: " (.bytesize deserialized)))
-          _ (.info LOGGER (str "deserialized object, is a ruby string?:" (instance? RubyString deserialized)))
-          deserialized-byte-seq (seq (.getBytes deserialized))
-          _ (.info LOGGER (str "count of bytes from jruby after deserialization:" (count deserialized-byte-seq)))
-
-          _ (.info LOGGER (str "count of bytes from ruby API after deserialization:" (ruby-count-bytes deserialized)))]
-      (.info LOGGER (str "moving on to assertions"))
-      #_(is (= a deserialized))
+          deserialized-byte-seq (seq (.getBytes deserialized))]
       (is (= (count (seq orig-bytes))
              (count deserialized-byte-seq)))
-      #_(is (= (count (seq orig-bytes))
-             (count (seq (.getBytes
-                          (pson-string-with-forced-encoding
-                           (first deserialized)))))))
       (is (= (seq orig-bytes)
-             (seq deserialized-byte-seq)))
-      (.info LOGGER (str "FIN"))
-      )))
+             (seq deserialized-byte-seq))))))
 
 (deftest jackpson-roundtrip
   (testing "Can roundtrip a simple array w/jackpson"
@@ -280,6 +270,4 @@
       (is (= (seq (.getBytes pson-serialized))
              (seq jackpson-serialized-bytes)))
       (is (= (count (first pson-deserialized-byte-seqs))
-             (count (first jackpson-deserialized-byte-seqs))))))
-
-  )
+             (count (first jackpson-deserialized-byte-seqs)))))))
