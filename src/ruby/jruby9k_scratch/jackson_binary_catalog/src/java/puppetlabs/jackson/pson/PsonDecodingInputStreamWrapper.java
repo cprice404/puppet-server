@@ -85,15 +85,15 @@ public class PsonDecodingInputStreamWrapper implements InputStreamWrapper {
                 psonBuffer[psonBufferOffset] = (byte) Character.digit((char)(orig.read()), 16);
             }
 //            orig.read(psonBuffer, 0, 4);
-            System.out.println("READING UNICODE BYTE; FILLED PSON BUFFER:");
-            for (int i = 0; i < 4; i++) {
-                System.out.println("\tpsonBuffer[" + i + "]: " + psonBuffer[i]);
-            }
+//            System.out.println("READING UNICODE BYTE; FILLED PSON BUFFER:");
+//            for (int i = 0; i < 4; i++) {
+//                System.out.println("\tpsonBuffer[" + i + "]: " + psonBuffer[i]);
+//            }
             // we know that during encoding we only went up to 0x1f, so
             // we can assume the integer will only require one byte to represent.
             b = ((psonBuffer[0] & 0xff) << 12) | ((psonBuffer[1] & 0xff) << 8) |
                     ((psonBuffer[2] & 0xff) << 4)  | (psonBuffer[3] & 0xff);
-            System.out.println("Bitwise math yielded: " + b);
+//            System.out.println("Bitwise math yielded: " + b);
             return b;
         }
     }
