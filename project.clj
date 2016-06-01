@@ -29,7 +29,7 @@
                  [slingshot "0.12.2"]
                  [clj-yaml "0.4.0" :exclusions [org.yaml/snakeyaml]]
                  [commons-lang "2.6"]
-                 [commons-io "2.4"]
+                 [commons-io "2.5"]
                  [clj-time "0.11.0"]
                  [prismatic/schema "1.1.1"]
                  [me.raynes/fs "1.4.6"]
@@ -63,7 +63,10 @@
                  [puppetlabs/ring-middleware "0.3.1"]
                  [puppetlabs/dujour-version-check "0.1.2" :exclusions [org.clojure/tools.logging]]
                  [puppetlabs/http-client "0.5.0"]
-                 [puppetlabs/comidi "0.3.1"]]
+                 [puppetlabs/comidi "0.3.1"]
+
+                 [com.fasterxml.jackson.core/jackson-databind "2.7.3"]
+                 [puppetlabs.scratch.jruby9k/jackson-binary-catalog "0.0.1" :exclusions [org.jruby/jruby-core org.jruby/jruby-stdlib]]]
 
   :main puppetlabs.trapperkeeper.main
 
