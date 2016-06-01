@@ -76,15 +76,23 @@ public class PsonDecodingInputStreamWrapper implements InputStreamWrapper {
         }
 
         private int readUnicodeByte() throws IOException {
-            orig.read(psonBuffer, 0, 4);
+            // TODO: this code is crap.  need to go back through it and use the
+            // appropriate data types (char/int/byte) in the appropriate places.
+            for (psonBufferOffset = 0; psonBufferOffset < 4; psonBufferOffset++) {
+                // this is disgusting and doesn't account for the case where
+                // Character.digit returns -1, but I haven't yet found a better way
+                // to go from an ascii hex char to the corresponding byte representation.
+                psonBuffer[psonBufferOffset] = (byte) Character.digit((char)(orig.read()), 16);
+            }
+//            orig.read(psonBuffer, 0, 4);
             System.out.println("READING UNICODE BYTE; FILLED PSON BUFFER:");
             for (int i = 0; i < 4; i++) {
                 System.out.println("\tpsonBuffer[" + i + "]: " + psonBuffer[i]);
             }
             // we know that during encoding we only went up to 0x1f, so
             // we can assume the integer will only require one byte to represent.
-            b = ((psonBuffer[0] & 0xff) << 24) | ((psonBuffer[1] & 0xff) << 16) |
-                    ((psonBuffer[2] & 0xff) << 8)  | (psonBuffer[3] & 0xff);
+            b = ((psonBuffer[0] & 0xff) << 12) | ((psonBuffer[1] & 0xff) << 8) |
+                    ((psonBuffer[2] & 0xff) << 4)  | (psonBuffer[3] & 0xff);
             System.out.println("Bitwise math yielded: " + b);
             return b;
         }

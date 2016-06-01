@@ -194,14 +194,14 @@
              (seq deserialized-byte-seq))))))
 
 (deftest jackpson-roundtrip
-  (testing "Can roundtrip a simple array w/jackpson"
+  #_(testing "Can roundtrip a simple array w/jackpson"
     (let [a ["funky" "town"]
           serialized (to-jackpson a)
           deserialized (from-jackpson serialized)]
       (is (= a (mapv (fn [is] (IOUtils/toString is "UTF-8"))
                      deserialized)))))
 
-  (testing "Can roundtrip a simple map w/jackpson"
+  #_(testing "Can roundtrip a simple map w/jackpson"
     (let [m {"foo" "fooval"
              "bar" "barval"}
           serialized (to-jackpson m)
