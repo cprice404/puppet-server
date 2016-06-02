@@ -56,8 +56,8 @@
                  [puppetlabs/http-client "0.5.0"]
                  [puppetlabs/comidi "0.3.1"]
 
-                 [com.fasterxml.jackson.core/jackson-databind "2.7.3"]
-                 [puppetlabs.scratch.jruby9k/jackson-binary-catalog "0.0.1" :exclusions [org.jruby/jruby-core org.jruby/jruby-stdlib]]]
+                 ;; TODO: for jackedpson, remove or move up to conflict section later
+                 [com.fasterxml.jackson.core/jackson-databind "2.7.3"]]
 
   :main puppetlabs.trapperkeeper.main
 
