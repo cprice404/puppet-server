@@ -19,7 +19,6 @@
                  ;; begin version conflict resolution dependencies
                  [puppetlabs/typesafe-config "0.1.5"]
                  [org.clojure/tools.macro "0.1.5"]
-                 [com.fasterxml.jackson.core/jackson-core "2.5.4"]
                  [org.clojure/tools.reader "1.0.0-alpha1"]
                  [org.yaml/snakeyaml "1.14"]
                  ;; end version conflict resolution dependencies
@@ -57,6 +56,7 @@
                  [puppetlabs/comidi "0.3.1"]
 
                  ;; TODO: for jackedpson, remove or move up to conflict section later
+                 [com.fasterxml.jackson.core/jackson-core "2.7.3"]
                  [com.fasterxml.jackson.core/jackson-databind "2.7.3"]]
 
   :main puppetlabs.trapperkeeper.main
