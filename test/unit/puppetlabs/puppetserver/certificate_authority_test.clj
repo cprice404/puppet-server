@@ -168,6 +168,8 @@
                      (testutils/ca-settings cadir)
                      :ca-ttl
                      (+ max-ca-ttl 1))]
+      (is (= {:foo :bar} {:foo :bar
+                          :baz :bam}))
       (is (thrown-with-msg? IllegalStateException #"ca_ttl must have a value below"
                             (validate-settings! settings)))))
 
