@@ -87,6 +87,7 @@
                        :group "puppet"
                        :build-type "foss"
                        :java-args "-Xms2g -Xmx2g -XX:MaxPermSize=256m"
+                       :logrotate-enabled false
                        :repo-target "PC1"
                        :bootstrap-source :services-d}
                 :resources {:dir "tmp/ezbake-resources"}
