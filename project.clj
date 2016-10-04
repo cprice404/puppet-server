@@ -47,7 +47,7 @@
                  [net.logstash.logback/logstash-logback-encoder "4.5.1" :exclusions [ch.qos.logback/logback-access
                                                                                      ch.qos.logback/logback-core]]
 
-                 [puppetlabs/jruby-utils "0.2.1"]
+                 [puppetlabs/jruby-utils "0.2.2-SNAPSHOT"]
                  [puppetlabs/trapperkeeper ~tk-version]
                  [puppetlabs/trapperkeeper-authorization "0.7.0"]
                  [puppetlabs/trapperkeeper-scheduler "0.0.1"]
