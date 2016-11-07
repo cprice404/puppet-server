@@ -22,7 +22,7 @@
 ;; any customizations you've made therein.)
 (defn puppetserver-conf
   []
-  (let [conf-file ((-> 'user-repl/initialize-default-config-file resolve deref))]
+  (let [conf-file ((-> 'dev-tools/initialize-default-config-file resolve deref))]
     (config/load-config conf-file))
   ;; a better way to handle config for a long-term dev environment is to comment
   ;; out the two previous lines, create
@@ -60,7 +60,7 @@
   []
   (load-file "./dev/user_repl.clj")
   (ns user-repl)
-  ((-> 'user-repl/go resolve deref)))
+  ((-> 'dev-tools/go resolve deref)))
 
 ;; Leiningen allows users to add plugins at a global level by modifying a
 ;; file in a user's home directory called '.lein/profiles.clj'. This will allow

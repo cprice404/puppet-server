@@ -1,4 +1,4 @@
-(ns user-repl
+(ns dev-tools
   (:require [puppetlabs.trapperkeeper.services.webserver.jetty9-service :refer [jetty9-service]]
             [puppetlabs.trapperkeeper.services.webrouting.webrouting-service :refer [webrouting-service]]
             [puppetlabs.services.master.master-service :refer [master-service]]
@@ -22,12 +22,14 @@
             [puppetlabs.services.protocols.jruby-puppet :as jruby-protocol]
             [puppetlabs.services.jruby-pool-manager.jruby-core :as jruby-core]
             [me.raynes.fs :as fs]
-            [puppetlabs.kitchensink.core :as ks]))
+            [puppetlabs.kitchensink.core :as ks]
+            [puppetlabs.trapperkeeper.bootstrap :as bootstrap]
+            [puppetlabs.trapperkeeper.config :as config]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Configuration
 
-(defn initialize-default-config-file
+#_(defn initialize-default-config-file
   "Checks to see if ~/.puppetserver/puppetserver.conf exists; if it does not,
   copies ./dev/puppetserver.conf.sample to that location."
   []
@@ -41,6 +43,15 @@
       (fs/copy "./dev/puppetserver.conf.sample" default-conf-file-dest))
     (ks/absolute-path default-conf-file-dest)))
 
+(defn get-default-config
+  []
+  (config/load-config "./dev/puppetserver.conf"))
+
+;; TODO: docs
+(defn get-config
+  [default-config]
+  default-config)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Basic system life cycle
 
@@ -49,7 +60,8 @@
 (defn- init []
   (alter-var-root #'system
     (fn [_] (tk/build-app
-              [jetty9-service
+             (bootstrap/parse-bootstrap-config! "./dev/bootstrap.cfg")
+              #_[jetty9-service
                webrouting-service
                master-service
                jruby-puppet-pooled-service
@@ -64,7 +76,9 @@
                versioned-code-service
                scheduler-service
                status-service]
-              ((resolve 'user/puppetserver-conf)))))
+             (get-config (get-default-config))
+              #_((resolve 'user/puppetserver-conf))
+             )))
   (alter-var-root #'system tka/init)
   (tka/check-for-errors! system))
 
@@ -89,12 +103,12 @@
   "Stop the running server, reload code, and restart."
   []
   (stop)
-  (refresh :after 'user-repl/go))
+  (refresh :after 'dev-tools/go))
 
 (defn help
   "Prints a list of all of the public functions and their docstrings"
   []
-  (let [fns (ns-publics 'user-repl)]
+  (let [fns (ns-publics 'dev-tools)]
     (doseq [f fns]
       ;; TODO; inspect arglists
       (println (format "(%s): %s\n"
