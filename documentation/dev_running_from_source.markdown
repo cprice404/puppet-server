@@ -7,24 +7,6 @@ canonical: "/puppetserver/latest/dev_running_from_source.html"
 So you'd like to run Puppet Server from source?
 -----
 
-Before we get started, let's highlight a few gotchas that might save you some time.
-The things that you are most likely to run into trouble with are pretty much the
-same things that were tricky about running the Webrick server from source:
-
-* Knowing where your confdir/vardir/codedir are
-* Knowing what your certname is
-* Making sure that your certname is resolvable
-
-In Puppet Server, we always specify /vardir/codedir explicitly in the Puppet Server
-config.  This way, they are never dynamically determined based on your user or
-anything magical like that.  So, if you need to know where they are, look at your
-config file(s).
-
-Your certname comes from `facter fqdn` or puppet.conf, just like it does in Webrick.
-If `facter fqdn` returns something that is not resolvable, you're gonna have a bad
-time.  Either set your certname explicitly in <confdir>/puppet.conf, or put
-`facter fqdn` into your /etc/hosts.
-
 The following steps will help you get Puppet Server up and running from source.
 
 Step 0: Quick Start for Developers
@@ -37,8 +19,9 @@ Step 0: Quick Start for Developers
     # Remove any old config if you want to make sure you're using the latest
     # defaults
     $ rm -rf ~/.puppetserver
-    # Copy the sample repl utilities namespace
-    $ cp dev/user.clj.sample dev/user.clj
+
+    # Run the `dev-setup` script to initialize all required configuration
+    $ ./dev-setup
 
     # Launch the clojure REPL
     $ lein repl
@@ -46,8 +29,12 @@ Step 0: Quick Start for Developers
     user=> (go)
     user=> (help)
 
-You should now have a running server.  Your confdir is set to `./target/master-conf`;
-see ~/.puppetserver/puppetserver.conf to examine this and other default paths.
+You should now have a running server.  All relevant paths (`$confdir`, `$codedir`,
+etc.) are configured by default to point to directories underneath `~.puppetlabs`.
+These should all align with the default values that `puppet` uses (for non-root
+users).
+
+You can find the specific paths in the `dev/puppetserver.conf` file.
 
 In another shell, you can run the agent:
 
@@ -56,39 +43,10 @@ In another shell, you can run the agent:
     # Set ruby and bin paths
     $ export RUBYLIB=./ruby/puppet/lib:./ruby/facter/lib
     $ export PATH=./ruby/puppet/bin:./ruby/facter/bin:$PATH
-    # Create the modules directory for the production environment, to avoid the
-    #  annoying module error during pluginsync
-    $ mkdir -p ./target/master-code-dir/environments/production/modules
     # Run the agent
-    $ puppet agent --no-daemonize --debug --trace --verbose \
-         --confdir ./target/master-conf-dir \
-         --vardir=./target/master-var-dir \
-         --server `facter fqdn` --onetime
-
-**NOTE** that the default config is not ideal for long-lived dev environments,
-because it sets codedir, confdir, and many other things to live inside of
-`./target`.  This directory *WILL BE COMPLETELY REMOVED* any time you run
-a `lein clean`, so if you've been setting up any modules / manifests in there,
-you'll lose your work.  It's much better to create a longer-lived home for
-these files.  To do that, you just need to edit the settings in your `puppetserver.conf`
-file.  More details below.
-
-Also, I generally prefer to use separate confdir and vardir settings for my master
-and agent, because otherwise it's super confusing to try to guess which one of them
-touches which files otherwise.  To use separate conf/vardirs between master and
-agent on Puppet Server, you just need to:
-
-* Choose one set of directories for the master via `puppetserver.conf`
-* Choose a different set of directories for the agent via CLI args or
-    `puppet.conf`'s `[agent]` section
-* Use a different certname for the master than for the agent.  (I usually put
-    `certname=localhost` into my master's `puppet.conf` file, use a different
-    confdir for the agent, and do `--server localhost` on the CLI for my
-    agent runs.  This also has the pleasant side effect of not needing to jack
-    with `/etc/hosts`/`facter fqdn` for the master.
+    $ puppet agent -t
 
 More detailed instructions follow.
-
 
 Step 1: Install Prerequisites
 -----
@@ -103,12 +61,8 @@ Use your system's package tools to ensure that the following prerequisites are i
 Step 2: Clone Git Repo and Set Up Working Tree
 -----
 
-    $ git clone git://github.com/puppetlabs/puppetserver
+    $ git clone --recursive git://github.com/puppetlabs/puppetserver
     $ cd puppetserver
-    # initialize git submodules (which are located in ./ruby, and contain the
-    #   puppet/facter ruby source code)
-    $ git submodule init
-    $ git submodule update
 
 Step 3: Set up Config Files
 -----
